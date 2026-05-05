@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/purchase_sheet_bg"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingLeft="20dp"
+        android:paddingTop="14dp"
+        android:paddingRight="20dp"
+        android:paddingBottom="24dp">
+
+        <View
+            android:layout_width="52dp"
+            android:layout_height="5dp"
+            android:background="@drawable/purchase_handle_bg" />
+
+        <ImageView
+            android:id="@+id/purchaseClose"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="left"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/purchase_close_bg"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel" />
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/purchase_icon_bg"
+            android:padding="18dp"
+            android:src="@android:drawable/ic_lock_idle_lock" />
+
+        <TextView
+            android:id="@+id/purchaseTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:text="@string/purchase_sheet_title"
+            android:textColor="@color/purchaseTitleColor"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/purchaseSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/purchase_sheet_subtitle"
+            android:textColor="@color/purchaseBodyColor"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/purchaseDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/purchase_sheet_description"
+            android:textColor="@color/purchaseBodyMutedColor"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/purchase_benefits_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/purchaseBenefitOne"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/purchase_sheet_benefit_one"
+                android:textColor="@color/purchaseBodyColor"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/purchaseBenefitTwo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/purchase_sheet_benefit_two"
+                android:textColor="@color/purchaseBodyColor"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/purchaseBenefitThree"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/purchase_sheet_benefit_three"
+                android:textColor="@color/purchaseBodyColor"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/purchaseAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/purchase_action_bg"
+            android:gravity="center"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:text="@string/purchase_sheet_action"
+            android:textColor="@android:color/white"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/purchaseLater"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/purchase_later_bg"
+            android:paddingLeft="16dp"
+            android:paddingTop="10dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="10dp"
+            android:text="@string/purchase_sheet_later"
+            android:textColor="@color/purchaseBodyColor"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</LinearLayout>

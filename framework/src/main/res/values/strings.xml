@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Framework</string>
+    <string name="ok">تاييد</string>
+    <string name="cancel">انصراف</string>
+    <string name="yes">بله</string>
+    <string name="no">خير</string>
+    <string name="press_color_to_apply">روي رنگ کليک کنيد تا اعمال شود</string>
+    <string name="dialog_color_picker">رنگ پيکر</string>
+    <string name="DefaultTypeface">HKoodak.ttf</string>
+    <string name="NextTypeface">HKoodak.ttf</string>
+    <string name="story_content_new_back">قبلي</string>
+    <string name="story_content_new_next">بعدي</string>
+    <string name="story_content_new_save">ذخيره</string>
+    <string name="story_content_new_night">حالت شب</string>
+    <string name="story_content_new_day">حالت روز</string>
+    <string name="added_to_favorites">به علاقه‌مندی‌ها اضافه شد</string>
+    <string name="removed_from_favorites">از علاقه‌مندی‌ها حذف شد</string>
+    <string name="msg_double_close">"برای بستن، دوباره کلید بازگشت را بزنید"</string>
+    <string name="favorite_footer">
+☞
+        برای حذف هر عنصر را به صورت طولانی نگه دارید یا به چپ یا راست بکشید.</string>
+
+</resources>

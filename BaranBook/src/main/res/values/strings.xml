@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">سلام</string>
+    <string name="buy">خريد درون برنامه</string>
+    <string name="app_name">جلولینه</string>
+    <string name="aboutTitle"></string>
+    <string name="aboutTitleBuy">نسخه 1.2\n
+نسخه اي که شما در دست داريد نسخه آزمايشي است براي خريد و پرداخت درون برنامه اي روي تاييد کليک کنيد
+</string>
+    <string name="help_info"> دکمه info :حاوي اطلاعات درباره طراحي نرم افزار مي باشد.</string>
+    <string name="help_favorite_add"> دکمه افزودن به favorite: مي توانيد آیتم مورد نظرتان را به ليست علاقه مندي ها اضافه کنيد</string>
+    <string name="help_favorite"> دکمه   favorite:با فشردن اين دکمه مي توانيد آیتمهايي را که به ليست علاقمنديها اضافه کرده ايد مشاهده کنيد.</string>
+    <string name="help_read_add">دکمه ثبت محل مطالعه : با اين دکمه ميتوانيد محل مطالعه را ثبت نموده و با دکمه ادامه مطالعه از همان محل قبلي شروع به ادامه مطالعه نماييد</string>
+    <string name="help_read">دکمه ادامه مطالعه : شما را به محل مطالعه ، که قبلا ثبت کرده ايد مي برد</string>
+    <string name="help_share"> دکمه  share :با کليک برروي اين دکمه مي توانيد آیتم مورد نظر را با ديگران به اشتراک بگذاريد..</string>
+    <string name="help_content_search"> دکمه content search:اگر ميخواهيد در محتواي کتاب جستجو کنيد روي اين گزينه کليک کنيد . شماره وارد صفحه اي ميکند که در آن امکان جستجو در محتوا وجود دارد.</string>
+    <string name="help_font"> دکمه Font :با کليک برروي اين دکمه مي توانيد اندازه فونت را تغيير دهيد.</string>
+    <string name="help_comment">شما مي توانيد با لمس طولاني صفحه ،صفحه مطالعه را بزرگ کنيد و همچنين قابليت چرخيدن صفحه همراه با چرخش گوشي را نيز دارد.  
+</string>
+    <string name="DefaultTypeface">Vazir-Light.ttf</string>
+    <string name="NextTypeface">Vazir-Light.ttf</string>
+    <string name="NextMenuType"></string>
+    <string name="base64Encode">MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwD2Z7mODy6GMLdA9iyzazt9hioxi2OvX3vqzoL6Sj2mjSs9N3iCYi34JgGJ6Z3RkFgbccLRgV3IuQ0w92l2TfIhnb8Za+XZcLJzuXNp+jUPtC3qlpwD2JxDG43SY6A1lxHMWfiOWMWlI/koavXuFozuOtMRzgMhOxT7vnuDh7QAyLr9B9phVnLs5RtHBHMf2rJElmTokytKQp0UfIraApO7pC+VRMSuDoUodRjQp/kCAwEAAQ==</string>
+    <string name="SKU_PREMIUM">ali.bb</string>
+    <string name="purchase_sheet_title">نسخه کامل را فعال کن</string>
+    <string name="purchase_sheet_subtitle">با خريد درون برنامه اي، همه بخش هاي کتاب بدون محدوديت در دسترس شما قرار مي گيرد.</string>
+    <string name="purchase_sheet_description">اگر از نسخه آزمايشي استفاده مي کنيد، با يک پرداخت سريع مي توانيد تجربه کامل و بدون وقفه را فعال کنيد.</string>
+    <string name="purchase_sheet_benefit_one">• باز شدن تمام بخش هاي قفل شده</string>
+    <string name="purchase_sheet_benefit_two">• بازيابي خريد پس از نصب مجدد برنامه</string>
+    <string name="purchase_sheet_benefit_three">• فعال سازي سريع و مستقيم از طريق کافه بازار</string>
+    <string name="purchase_sheet_action">شروع خريد امن</string>
+    <string name="purchase_sheet_later">بعدا تصميم مي گيرم</string>
+    <string name="story_list_new_subtitle">يک بخش را انتخاب کن تا محتوای آن با نمايش بهتر باز شود.</string>
+    <string name="story_list_new_search_hint">جستجو در عنوان بخش ها...</string>
+    <string name="story_list_new_meta">براي نمايش لمس کن</string>
+
+    <!-- Search Page Strings -->
+    <string name="search_page_title">جستجو</string>
+    <string name="search_hint">جستجو کنید...</string>
+    <string name="search_tab_title">جستجو در عنوان</string>
+    <string name="search_tab_description">جستجو در توضیحات</string>
+    <string name="favorites">علاقه‌مندی‌ها</string>
+    <string name="back">بازگشت</string>
+    <string name="share">اشتراک‌گذاری</string>
+    <string name="add_to_favorites">افزودن به علاقه‌مندی‌ها</string>
+    <string name="remove_from_favorites">حذف از علاقه‌مندی‌ها</string>
+    <string name="empty_search_message">برای جستجو، عبارت مورد نظر را وارد کنید</string>
+    <string name="no_results_message">نتیجه‌ای یافت نشد</string>
+    <string name="error_search_message">خطا در جستجو. لطفاً دوباره تلاش کنید</string>
+    <string name="empty_state">خالی</string>
+    <string name="error_state">خطا</string>
+    <string name="loading">در حال بارگذاری...</string>
+    <string name="search_results_count">%d نتیجه یافت شد</string>
+    <string name="share_text_format">%1$s\n\n%2$s</string>
+    <string name="database_error">خطا در دسترسی به پایگاه داده</string>
+
+</resources>

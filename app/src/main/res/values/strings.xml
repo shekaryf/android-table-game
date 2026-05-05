@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">baranPack</string>
+    
+    <!-- Search Page Strings -->
+    <string name="search_page_title">جستجو</string>
+    <string name="search_hint">جستجو کنید...</string>
+    <string name="search_tab_title">جستجو در عنوان</string>
+    <string name="search_tab_description">جستجو در توضیحات</string>
+    <string name="favorites">علاقه‌مندی‌ها</string>
+    <string name="back">بازگشت</string>
+    <string name="share">اشتراک‌گذاری</string>
+    <string name="add_to_favorites">افزودن به علاقه‌مندی‌ها</string>
+    <string name="remove_from_favorites">حذف از علاقه‌مندی‌ها</string>
+    <string name="empty_search_message">برای جستجو، عبارت مورد نظر را وارد کنید</string>
+    <string name="no_results_message">نتیجه‌ای یافت نشد</string>
+    <string name="error_search_message">خطا در جستجو. لطفاً دوباره تلاش کنید</string>
+    <string name="empty_state">خالی</string>
+    <string name="error_state">خطا</string>
+    <string name="loading">در حال بارگذاری...</string>
+    <string name="search_results_count">%d نتیجه یافت شد</string>
+    <string name="added_to_favorites">به علاقه‌مندی‌ها اضافه شد</string>
+    <string name="removed_from_favorites">از علاقه‌مندی‌ها حذف شد</string>
+    <string name="share_text_format">%1$s\n\n%2$s</string>
+    <string name="database_error">خطا در دسترسی به پایگاه داده</string>
+</resources>

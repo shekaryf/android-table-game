@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="match_parent" >
+
+    <TextView
+        android:id="@+id/lblMessage"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:padding="10dp"
+        android:gravity="center_vertical|center_horizontal"
+        android:text="TextView" />
+
+    <ImageView
+        android:id="@+id/ivShare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/lblMessage"
+        android:src="@drawable/share_bg" />
+
+    <ImageView
+        android:id="@+id/ivFavAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/lblMessage"
+        android:layout_toRightOf="@+id/ivShare"
+        android:src="@drawable/favoriteadd_bg" />
+
+</RelativeLayout>

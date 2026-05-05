@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="DefaultGradiantStart">#ffbfb5b5</color>
+    <color name="DefaultGradiantCenter">#fffff9f9</color>
+    <color name="DefaultGradiantEnd">#ffffffff</color>
+    <color name="DefaultPressGradiantStart">#ff9d9393</color>
+    <color name="DefaultPressGradiantCenter">#ffddd7d7</color>
+    <color name="DefaultPressGradiantEnd">#ffdddddd</color>
+    <color name="DefaultStrokeColor">#cc220101</color>
+    <color name="DefaultTextColor">#ff000000</color>
+    <color name="DefaultHighlightTextColor">#ff990101</color>
+    <color name="DefaultHighlightBackColor">#ff8c98f1</color>
+    <color name="NextGradiantStart">#ffbfb5b5</color>
+    <color name="NextGradiantCenter">#fffff9f9</color>
+    <color name="NextGradiantEnd">#ffffffff</color>
+    <color name="NextPressGradiantStart">#ff9d9393</color>
+    <color name="NextPressGradiantCenter">#ffddd7d7</color>
+    <color name="NextPressGradiantEnd">#ffdddddd</color>
+    <color name="NextStrokeColor">#cc220101</color>
+    <color name="NextTextColor">#ff000000</color>
+    <color name="NextHighlightTextColor">#ff990101</color>
+    <color name="NextHighlightBackColor">#ff8c98f1</color>
+    <color name="purchaseTitleColor">#FF1E2433</color>
+    <color name="purchaseBodyColor">#FF4A5565</color>
+    <color name="purchaseBodyMutedColor">#FF6F7C8C</color>
+    <color name="page6TitleColor">#FF243548</color>
+    <color name="page6BodyColor">#FF6A7280</color>
+    <color name="page6ChipColor">#FF8F4A37</color>
+    <color name="FirstHeaderColor">#ffffff</color>
+    <color name="page6Header1">#FFB24D3F</color>
+    <color name="page6Header2">#FF32455D</color>
+
+</resources>

@@ -1,0 +1,16 @@
+<resources>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="DefaultTextSize">20dp</dimen>
+    <dimen name="DefaultCornerRadios">5dp</dimen>
+    <dimen name="DefaultStrokeWidth">1dp</dimen>
+    <dimen name="NextStrokeWidth">1dp</dimen>
+    <dimen name="NextCornerRadios">5dp</dimen>
+    <dimen name="NextTextSize">17dp</dimen>
+    <dimen name="content_padding">16dp</dimen>
+    <dimen name="header_height">60dp</dimen>
+    <dimen name="header_btn_width">40dp</dimen>
+
+</resources>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:background="@drawable/footer"
+    android:paddingLeft="10dp"
+    android:paddingTop="10dp"
+    android:paddingRight="10dp"
+    android:paddingBottom="16dp">
+
+    <TextView
+        android:id="@+id/btnBackText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="6dp"
+        android:layout_weight="1"
+        android:background="@drawable/story_content_new_action_bg"
+        android:gravity="center"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="@string/story_content_new_back"
+        android:textColor="#FF243548"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/btnSaveText"
+        android:layout_width="@dimen/header_btn_width"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="6dp"
+        android:background="@drawable/read_continue_bg"
+        android:gravity="center"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:contentDescription="@string/story_content_new_save"
+        android:textColor="#FF243548"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/btnNightText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="6dp"
+        android:layout_weight="1"
+        android:background="@drawable/story_content_new_action_bg"
+        android:gravity="center"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="@string/story_content_new_night"
+        android:textColor="#FF243548"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/btnNextText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@drawable/story_content_new_primary_action_bg"
+        android:gravity="center"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="@string/story_content_new_next"
+        android:textColor="@android:color/white"
+        android:textSize="13sp" />
+
+</LinearLayout>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/header_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="14dp"
+    android:paddingTop="10dp"
+    android:paddingRight="14dp"
+    android:paddingBottom="10dp">
+
+    <ImageButton
+        android:id="@+id/btnShare"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@drawable/story_content_new_icon_bg"
+        android:src="@drawable/share" />
+
+    <ImageButton
+        android:id="@+id/btnPlus"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginLeft="8dp"
+        android:background="@drawable/story_content_new_icon_bg"
+        android:src="@drawable/favoriteadd" />
+
+    <TextView
+        android:id="@+id/lblHead"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="12dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical|right"
+        android:textColor="#FF243548"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/btnFont"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginLeft="8dp"
+        android:background="@drawable/story_content_new_primary_icon_bg"
+        android:src="@drawable/font" />
+
+</LinearLayout>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/header"
+    android:gravity="center_vertical"
+    android:padding="5dp" >
+
+    <TextView
+        android:id="@+id/lblHead"
+        android:layout_width="130dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:gravity="right|center_vertical"
+        android:orientation="horizontal"
+        android:singleLine="false" >
+    </TextView>
+
+    <ImageButton
+        android:id="@+id/btnPlus"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_alignParentLeft="true"
+        android:background="@drawable/favoriteadd_bg" />
+
+    <TextView
+        android:id="@+id/sp1"
+        android:layout_width="2dp"
+        android:layout_height="36dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="1dp"
+        android:layout_marginRight="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_toRightOf="@+id/btnPlus"
+        android:background="@color/splitbackcolor" />
+
+    <ImageButton
+        android:id="@+id/btnShare"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_toRightOf="@+id/sp1"
+        android:background="@drawable/share_bg" />
+
+    <TextView
+        android:id="@+id/sp2"
+        android:layout_width="2dp"
+        android:layout_height="36dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="1dp"
+        android:layout_marginRight="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_toRightOf="@+id/btnShare"
+        android:background="@color/splitbackcolor" />
+
+    <ImageButton
+        android:id="@+id/btnFont"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_toRightOf="@+id/sp2"
+        android:background="@drawable/font_bg" />
+
+</RelativeLayout>
