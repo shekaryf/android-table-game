@@ -25,6 +25,10 @@
             </intent-filter>
         </activity>
         <activity
+            android:name="ir.baran.bookPack.GamePage"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BaranPack.NoTitleBar" />
+        <activity
             android:name="ir.baran.book.FavoritesListPage"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.BaranPack.NoTitleBar" >
