@@ -1,3 +1,5 @@
+CREATE TABLE "settings" ("id" TEXT PRIMARY KEY  NOT NULL  UNIQUE , "value" TEXT);
+
 -- ==========================================
 -- 1. ساخت جداول (Tables Creation)
 -- ==========================================

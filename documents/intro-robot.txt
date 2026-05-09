@@ -1,0 +1,46 @@
+Act as an expert Android Native (Java) developer. I am building a Word Puzzle Game based on a "Scramble & Swap" mechanic. I need you to write the code for this game using the my architecture, Room Database, and LiveData.
+
+Please generate the code step-by-step. Wait for my confirmation after each step before moving to the next one.
+
+Here is the complete scenario and requirements:
+
+# 1. Tech Stack & Architecture:
+- Platform: Android Native
+- Language: Java
+- Architecture:
+    Use my architect at loading of FirstSplashPage. Your code should be start from an activity based of it (extends Form).
+    Creating GamePage and start from FirstSplashPage (codes I commented)
+- Database:
+    Game\app\src\main\assets\dt file is a .sqlite file and its structure is in based documents\data-structure.sql.
+        it is loading at DataBaseHelper.databaseHelper(FirstSplashPage line 18)
+    Look my Game\BaranBook\src\main\java\ir\baran\bookPack\db files(MoinItem,MoinManager) (to to connect to sqlite file)
+
+- look at documents\get-idea.png and get Idea for component(rows and columns are dynamic for my project)
+- UI Components: What you recommend?
+
+# 2. Database Models (Room Entities):
+    Game\app\src\main\assets\dt file is a .sqlite file and its structure is in based documents\data-structure.sql.
+        it is loading at DataBaseHelper.databaseHelper(FirstSplashPage line 18)
+    Look my Game\BaranBook\src\main\java\ir\baran\bookPack\db files(MoinItem,MoinManager) (to to connect to sqlite file)
+
+# 3. Core Gameplay Mechanic (Scramble & Swap):
+The core logic should be handled in `GameViewModel`.
+- Initialization: When a level is loaded, read `grid_data`. Extract all movable letters (ignoring empty spaces or clue blocks), shuffle them (scramble), and place them back into the grid to create the `current_grid` state.
+- Swap Mechanic: The user taps on Cell A, then taps on Cell B. The letters in these two cells should swap in the `current_grid`.
+- Live Validation: After every swap, compare the `current_grid` with the `grid_data` (the correct answer). If a specific row or column matches perfectly, mark those letters as "locked" (correct) so they cannot be swapped anymore. Change their status to update the UI (e.g., turn them green).
+- Win Condition: If `current_grid` exactly equals `grid_data`, trigger the win state.
+
+# 4. Post-Win Logic:
+When the win state is triggered, the `GameViewModel` should call the Repository to:
+- Update the `Level` entity (`is_completed = true`).
+- Update the `User` entity (add 20 coins, increment `current_level_id`).
+
+# Generation Steps:
+Please start generating the code in the following order. ONLY generate Step 1 for now and wait for my response:
+
+**Step 1:** Create the Data Models(intro and ideas)
+**Step 2:** Create the `Repository` class to handle DB operations.
+**Step 3:** Create the `GameViewModel` including the scramble, swap, validation, and win logic.
+**Step 4:** Create the `GamePage` (UI) with the GridLayout, observing LiveData from the ViewModel, and handling user clicks for the swap mechanic.
+
+Let's start with Step 1.
