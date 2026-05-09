@@ -24,8 +24,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
     }
 }
 
@@ -41,10 +47,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
 
     // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation(libs.room.runtime.android)
-    implementation(libs.room.common.jvm)
-    annotationProcessor("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.0")
+    annotationProcessor("androidx.room:room-compiler:2.7.0")
     
     // ViewPager2 for tab navigation
     implementation("androidx.viewpager2:viewpager2:1.0.0")
