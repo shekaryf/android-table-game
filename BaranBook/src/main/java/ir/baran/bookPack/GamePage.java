@@ -26,6 +26,7 @@ import ir.baran.bookPack.game.domain.model.GameCell;
 import ir.baran.bookPack.game.presentation.GameViewModel;
 import ir.baran.framework.forms.Form;
 import ir.baran.framework.utilities.Functions;
+import ir.baran.framework.utilities.MyConfig;
 
 public class GamePage extends Form {
 
@@ -48,9 +49,10 @@ public class GamePage extends Form {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        MyConfig._FirstForm = this;
         viewModel = new ViewModelProvider(this).get(GameViewModel.class);
         subscribeToViewModel();
+        viewModel.validateAllLevels();
 
         int levelId = getIntent() != null ? getIntent().getIntExtra(EXTRA_LEVEL_ID, 1) : 1;
         viewModel.loadLevel(levelId);
@@ -58,6 +60,8 @@ public class GamePage extends Form {
 
     @Override
     public void initContent(LinearLayout llContent) {
+        MyConfig._FirstForm = this;
+
         llContent.setBackgroundColor(COLOR_BG_PAGE);
         llContent.setOrientation(LinearLayout.VERTICAL);
         llContent.setPadding(dp(12), dp(12), dp(12), dp(12));
@@ -117,6 +121,29 @@ public class GamePage extends Form {
                 showMessage(error);
             }
         });
+
+        viewModel.getValidationErrorsLiveData().observe(this, errors -> {
+            if (errors == null) {
+                return;
+            }
+            if (errors.isEmpty()) {
+                showMessage("Level data validation passed.");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder("Level data issues: ");
+            int count = Math.min(3, errors.size());
+            for (int i = 0; i < count; i++) {
+                if (i > 0) {
+                    sb.append(" | ");
+                }
+                sb.append(errors.get(i));
+            }
+            if (errors.size() > count) {
+                sb.append(" ... +").append(errors.size() - count).append(" more");
+            }
+            showMessage(sb.toString());
+        });
     }
 
     private void renderBoard(GameBoard board) {
@@ -150,10 +177,17 @@ public class GamePage extends Form {
     private TextView buildCellView(GameCell cell, int cellSize) {
         TextView tv = new TextView(this);
         tv.setGravity(Gravity.CENTER);
-        tv.setTextColor(COLOR_TEXT);
-        tv.setTypeface(Typeface.DEFAULT_BOLD);
-        tv.setTextSize(18f);
-        tv.setText(cell.getState() == CellState.BLOCKED ? "" : safeLetter(cell.getLetter()));
+        if (cell.getState() == CellState.BLOCKED) {
+            tv.setTextColor(COLOR_SUBTEXT);
+            tv.setTypeface(Typeface.DEFAULT);
+            tv.setTextSize(12f);
+            tv.setText(safeLetter(cell.getLetter()));
+        } else {
+            tv.setTextColor(COLOR_TEXT);
+            tv.setTypeface(Typeface.DEFAULT_BOLD);
+            tv.setTextSize(18f);
+            tv.setText(safeLetter(cell.getLetter()));
+        }
 
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = cellSize;

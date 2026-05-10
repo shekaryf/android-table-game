@@ -3,27 +3,25 @@ package ir.baran.bookPack.game.data.model;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
-import androidx.room.Index;
 import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
 @Entity(
         tableName = "Levels",
         foreignKeys = @ForeignKey(
                 entity = CategoryEntity.class,
                 parentColumns = "id",
-                childColumns = "category_id",
-                onDelete = ForeignKey.CASCADE
-        ),
-        indices = {@Index(value = "category_id")}
+                childColumns = "category_id"
+        )
 )
 public class LevelEntity {
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    private int id;
+    private Integer id;
 
     @ColumnInfo(name = "category_id")
-    private int categoryId;
+    private Integer categoryId;
 
     @ColumnInfo(name = "level_number")
     private int levelNumber;
@@ -36,30 +34,32 @@ public class LevelEntity {
 
     // Kept as JSON string, parsed by ViewModel for runtime grid state.
     @ColumnInfo(name = "grid_data")
+    @NonNull
     private String gridData;
 
     @ColumnInfo(name = "clues_data")
+    @NonNull
     private String cluesData;
 
-    @ColumnInfo(name = "is_completed")
-    private int isCompleted;
+    @ColumnInfo(name = "is_completed", defaultValue = "0")
+    private Integer isCompleted;
 
-    @ColumnInfo(name = "stars")
-    private int stars;
+    @ColumnInfo(name = "stars", defaultValue = "0")
+    private Integer stars;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public int getCategoryId() {
+    public Integer getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(int categoryId) {
+    public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
     }
 
@@ -103,19 +103,19 @@ public class LevelEntity {
         this.cluesData = cluesData;
     }
 
-    public int getIsCompleted() {
+    public Integer getIsCompleted() {
         return isCompleted;
     }
 
-    public void setIsCompleted(int isCompleted) {
+    public void setIsCompleted(Integer isCompleted) {
         this.isCompleted = isCompleted;
     }
 
-    public int getStars() {
+    public Integer getStars() {
         return stars;
     }
 
-    public void setStars(int stars) {
+    public void setStars(Integer stars) {
         this.stars = stars;
     }
 }

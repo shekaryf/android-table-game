@@ -18,9 +18,9 @@ public class FirstSplashPage extends SplashPage {
 		DataBaseHelper.databaseHelper(this, 2000);
 		MyConfig._AssetManager = getAssets();
 		//start from here
-//		Intent intent = new Intent(this, GamePage.class);
-//
-//		startActivity(intent);
+		Intent intent = new Intent(this, GamePage.class);
+
+		startActivity(intent);
 	}
 
 }

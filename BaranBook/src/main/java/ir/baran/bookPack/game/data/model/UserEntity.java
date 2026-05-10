@@ -9,28 +9,28 @@ public class UserEntity {
 
     @PrimaryKey
     @ColumnInfo(name = "id")
-    private int id;
+    private Integer id;
 
-    @ColumnInfo(name = "username")
+    @ColumnInfo(name = "username", defaultValue = "'بازیکن'")
     private String username;
 
-    @ColumnInfo(name = "coins")
-    private int coins;
+    @ColumnInfo(name = "coins", defaultValue = "100")
+    private Integer coins;
 
-    @ColumnInfo(name = "total_score")
-    private int totalScore;
+    @ColumnInfo(name = "total_score", defaultValue = "0")
+    private Integer totalScore;
 
-    @ColumnInfo(name = "current_category_id")
-    private int currentCategoryId;
+    @ColumnInfo(name = "current_category_id", defaultValue = "1")
+    private Integer currentCategoryId;
 
-    @ColumnInfo(name = "current_level_id")
-    private int currentLevelId;
+    @ColumnInfo(name = "current_level_id", defaultValue = "1")
+    private Integer currentLevelId;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -42,35 +42,35 @@ public class UserEntity {
         this.username = username;
     }
 
-    public int getCoins() {
+    public Integer getCoins() {
         return coins;
     }
 
-    public void setCoins(int coins) {
+    public void setCoins(Integer coins) {
         this.coins = coins;
     }
 
-    public int getTotalScore() {
+    public Integer getTotalScore() {
         return totalScore;
     }
 
-    public void setTotalScore(int totalScore) {
+    public void setTotalScore(Integer totalScore) {
         this.totalScore = totalScore;
     }
 
-    public int getCurrentCategoryId() {
+    public Integer getCurrentCategoryId() {
         return currentCategoryId;
     }
 
-    public void setCurrentCategoryId(int currentCategoryId) {
+    public void setCurrentCategoryId(Integer currentCategoryId) {
         this.currentCategoryId = currentCategoryId;
     }
 
-    public int getCurrentLevelId() {
+    public Integer getCurrentLevelId() {
         return currentLevelId;
     }
 
-    public void setCurrentLevelId(int currentLevelId) {
+    public void setCurrentLevelId(Integer currentLevelId) {
         this.currentLevelId = currentLevelId;
     }
 }

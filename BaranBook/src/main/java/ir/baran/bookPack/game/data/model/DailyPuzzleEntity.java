@@ -3,34 +3,38 @@ package ir.baran.bookPack.game.data.model;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
 @Entity(tableName = "DailyPuzzles")
 public class DailyPuzzleEntity {
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    private int id;
+    private Integer id;
 
     @ColumnInfo(name = "puzzle_date")
+    @NonNull
     private String puzzleDate;
 
     @ColumnInfo(name = "grid_data")
+    @NonNull
     private String gridData;
 
     @ColumnInfo(name = "clues_data")
+    @NonNull
     private String cluesData;
 
-    @ColumnInfo(name = "reward_coins")
-    private int rewardCoins;
+    @ColumnInfo(name = "reward_coins", defaultValue = "50")
+    private Integer rewardCoins;
 
-    @ColumnInfo(name = "status")
-    private int status;
+    @ColumnInfo(name = "status", defaultValue = "0")
+    private Integer status;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -58,19 +62,19 @@ public class DailyPuzzleEntity {
         this.cluesData = cluesData;
     }
 
-    public int getRewardCoins() {
+    public Integer getRewardCoins() {
         return rewardCoins;
     }
 
-    public void setRewardCoins(int rewardCoins) {
+    public void setRewardCoins(Integer rewardCoins) {
         this.rewardCoins = rewardCoins;
     }
 
-    public int getStatus() {
+    public Integer getStatus() {
         return status;
     }
 
-    public void setStatus(int status) {
+    public void setStatus(Integer status) {
         this.status = status;
     }
 }

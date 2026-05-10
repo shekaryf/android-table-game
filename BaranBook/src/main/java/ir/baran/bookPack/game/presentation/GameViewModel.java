@@ -11,6 +11,7 @@ import androidx.lifecycle.Observer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,11 +26,15 @@ import ir.baran.bookPack.game.domain.model.GameCell;
 public class GameViewModel extends AndroidViewModel {
 
     private static final String BLOCK_TOKEN = "*";
+    private static final String BLOCK_TOKEN_ALT = "#";
+    private static final String CLUE_PREFIX = "C:";
+    private static final String LETTER_PREFIX = "L:";
 
     private final GameRepository repository;
     private final MutableLiveData<GameBoard> boardLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> winLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<String>> validationErrorsLiveData = new MutableLiveData<>();
 
     private LiveData<LevelEntity> activeLevelLiveData;
     private final Observer<LevelEntity> levelObserver = this::handleLevelLoaded;
@@ -47,6 +52,16 @@ public class GameViewModel extends AndroidViewModel {
     private int selectedRow = -1;
     private int selectedCol = -1;
 
+    private static class ParsedGrid {
+        final String[][] answerGrid;
+        final boolean[][] nonPlayableCells;
+
+        ParsedGrid(String[][] answerGrid, boolean[][] nonPlayableCells) {
+            this.answerGrid = answerGrid;
+            this.nonPlayableCells = nonPlayableCells;
+        }
+    }
+
     public GameViewModel(@NonNull Application application) {
         super(application);
         repository = new GameRepository(application.getApplicationContext());
@@ -62,6 +77,14 @@ public class GameViewModel extends AndroidViewModel {
 
     public LiveData<String> getErrorLiveData() {
         return errorLiveData;
+    }
+
+    public LiveData<List<String>> getValidationErrorsLiveData() {
+        return validationErrorsLiveData;
+    }
+
+    public void validateAllLevels() {
+        repository.validateAllLevelsAsync(errors -> validationErrorsLiveData.postValue(errors));
     }
 
     public void loadLevel(int levelId) {
@@ -102,7 +125,7 @@ public class GameViewModel extends AndroidViewModel {
 
         swapCells(selectedRow, selectedCol, row, col);
         clearSelection();
-        validateAndLockLines();
+        updateLockedCellsByCorrectLetters();
         publishBoard();
 
         if (isWin()) {
@@ -116,6 +139,10 @@ public class GameViewModel extends AndroidViewModel {
             errorLiveData.postValue("Level not found.");
             return;
         }
+        if (levelEntity.getId() == null) {
+            errorLiveData.postValue("Level id is null.");
+            return;
+        }
         activeLevelId = levelEntity.getId();
         initializeBoardFromLevel(levelEntity);
     }
@@ -127,7 +154,9 @@ public class GameViewModel extends AndroidViewModel {
         }
 
         try {
-            answerGrid = parseGrid(level.getGridData());
+            ParsedGrid parsed = parseGrid(level.getGridData(), level.getGridRows(), level.getGridCols());
+            answerGrid = parsed.answerGrid;
+            blockedCells = parsed.nonPlayableCells;
         } catch (JSONException e) {
             errorLiveData.postValue("Invalid grid_data JSON.");
             return;
@@ -138,33 +167,90 @@ public class GameViewModel extends AndroidViewModel {
         rows = answerGrid.length;
         cols = rows > 0 ? answerGrid[0].length : 0;
         currentGrid = new String[rows][cols];
-        blockedCells = new boolean[rows][cols];
         lockedCells = new boolean[rows][cols];
 
         scrambleMovableLetters();
-        validateAndLockLines();
+        updateLockedCellsByCorrectLetters();
         publishBoard();
     }
 
-    private String[][] parseGrid(String gridDataJson) throws JSONException {
+    private ParsedGrid parseGrid(String gridDataJson, int expectedRows, int expectedCols) throws JSONException {
         JSONArray rowsArray = new JSONArray(gridDataJson);
         int parsedRows = rowsArray.length();
         if (parsedRows == 0) {
-            return new String[0][0];
+            return new ParsedGrid(new String[0][0], new boolean[0][0]);
         }
 
         int parsedCols = rowsArray.getJSONArray(0).length();
-        String[][] result = new String[parsedRows][parsedCols];
+        if (expectedRows > 0 && expectedRows != parsedRows) {
+            throw new JSONException("grid_rows mismatch. expected=" + expectedRows + " actual=" + parsedRows);
+        }
+        if (expectedCols > 0 && expectedCols != parsedCols) {
+            throw new JSONException("grid_cols mismatch. expected=" + expectedCols + " actual=" + parsedCols);
+        }
+
+        String[][] letters = new String[parsedRows][parsedCols];
+        boolean[][] nonPlayable = new boolean[parsedRows][parsedCols];
 
         for (int r = 0; r < parsedRows; r++) {
             JSONArray rowArray = rowsArray.getJSONArray(r);
+            if (rowArray.length() != parsedCols) {
+                throw new JSONException("All rows must have equal columns");
+            }
             for (int c = 0; c < parsedCols; c++) {
-                String token = rowArray.optString(c, "").trim();
-                result[r][c] = token;
+                Object raw = rowArray.get(c);
+                ParsedCell cell = parseCell(raw);
+                letters[r][c] = cell.value;
+                nonPlayable[r][c] = !cell.playable;
             }
         }
 
-        return result;
+        return new ParsedGrid(letters, nonPlayable);
+    }
+
+    private ParsedCell parseCell(Object raw) throws JSONException {
+        if (raw == null || raw == JSONObject.NULL) {
+            return new ParsedCell("", false);
+        }
+
+        if (raw instanceof JSONObject) {
+            JSONObject obj = (JSONObject) raw;
+            String type = obj.optString("type", "letter").trim().toLowerCase();
+            String value = obj.optString("value", "").trim();
+            if ("block".equals(type) || "blocked".equals(type)) {
+                return new ParsedCell("", false);
+            }
+            if ("clue".equals(type) || "hint".equals(type)) {
+                return new ParsedCell(value, false);
+            }
+            return new ParsedCell(normalizeLetter(value), true);
+        }
+
+        String token = String.valueOf(raw).trim();
+        if (token.isEmpty() || BLOCK_TOKEN.equals(token) || BLOCK_TOKEN_ALT.equals(token)) {
+            return new ParsedCell("", false);
+        }
+        if (token.startsWith(CLUE_PREFIX)) {
+            return new ParsedCell(token.substring(CLUE_PREFIX.length()).trim(), false);
+        }
+        if (token.startsWith(LETTER_PREFIX)) {
+            return new ParsedCell(normalizeLetter(token.substring(LETTER_PREFIX.length())), true);
+        }
+        return new ParsedCell(normalizeLetter(token), true);
+    }
+
+    private String normalizeLetter(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private static class ParsedCell {
+        final String value;
+        final boolean playable;
+
+        ParsedCell(String value, boolean playable) {
+            this.value = value;
+            this.playable = playable;
+        }
     }
 
     private void scrambleMovableLetters() {
@@ -174,10 +260,7 @@ public class GameViewModel extends AndroidViewModel {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 String answer = answerGrid[r][c];
-                boolean isBlocked = isBlockedToken(answer);
-                blockedCells[r][c] = isBlocked;
-
-                if (isBlocked) {
+                if (blockedCells[r][c]) {
                     currentGrid[r][c] = answer;
                 } else {
                     movableLetters.add(answer);
@@ -186,58 +269,67 @@ public class GameViewModel extends AndroidViewModel {
             }
         }
 
-        Collections.shuffle(movableLetters);
+        if (movablePositions.size() <= 1) {
+            for (int i = 0; i < movablePositions.size(); i++) {
+                int[] pos = movablePositions.get(i);
+                currentGrid[pos[0]][pos[1]] = movableLetters.get(i);
+            }
+            return;
+        }
+
+        // Try to create a board where no movable cell starts with its correct letter.
+        int attempts = 0;
+        boolean validShuffle = false;
+        while (attempts < 200 && !validShuffle) {
+            Collections.shuffle(movableLetters);
+            validShuffle = true;
+            for (int i = 0; i < movablePositions.size(); i++) {
+                int[] pos = movablePositions.get(i);
+                if (safeEquals(movableLetters.get(i), answerGrid[pos[0]][pos[1]])) {
+                    validShuffle = false;
+                    break;
+                }
+            }
+            attempts++;
+        }
 
         for (int i = 0; i < movablePositions.size(); i++) {
             int[] pos = movablePositions.get(i);
             currentGrid[pos[0]][pos[1]] = movableLetters.get(i);
         }
-    }
 
-    private void validateAndLockLines() {
-        for (int r = 0; r < rows; r++) {
-            if (isRowCorrect(r)) {
-                for (int c = 0; c < cols; c++) {
-                    if (!blockedCells[r][c]) {
-                        lockedCells[r][c] = true;
-                    }
+        // Fallback fix for duplicate-letter cases: reduce fixed points as much as possible.
+        for (int i = 0; i < movablePositions.size(); i++) {
+            int[] a = movablePositions.get(i);
+            if (!safeEquals(currentGrid[a[0]][a[1]], answerGrid[a[0]][a[1]])) {
+                continue;
+            }
+            for (int j = i + 1; j < movablePositions.size(); j++) {
+                int[] b = movablePositions.get(j);
+                String aLetter = currentGrid[a[0]][a[1]];
+                String bLetter = currentGrid[b[0]][b[1]];
+                boolean aWouldBeCorrect = safeEquals(bLetter, answerGrid[a[0]][a[1]]);
+                boolean bWouldBeCorrect = safeEquals(aLetter, answerGrid[b[0]][b[1]]);
+                if (!aWouldBeCorrect && !bWouldBeCorrect) {
+                    currentGrid[a[0]][a[1]] = bLetter;
+                    currentGrid[b[0]][b[1]] = aLetter;
+                    break;
                 }
             }
         }
+    }
 
-        for (int c = 0; c < cols; c++) {
-            if (isColumnCorrect(c)) {
-                for (int r = 0; r < rows; r++) {
-                    if (!blockedCells[r][c]) {
-                        lockedCells[r][c] = true;
-                    }
+    private void updateLockedCellsByCorrectLetters() {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (blockedCells[r][c] || lockedCells[r][c]) {
+                    continue;
+                }
+                if (safeEquals(currentGrid[r][c], answerGrid[r][c])) {
+                    lockedCells[r][c] = true;
                 }
             }
         }
-    }
-
-    private boolean isRowCorrect(int row) {
-        for (int c = 0; c < cols; c++) {
-            if (blockedCells[row][c]) {
-                continue;
-            }
-            if (!safeEquals(currentGrid[row][c], answerGrid[row][c])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isColumnCorrect(int col) {
-        for (int r = 0; r < rows; r++) {
-            if (blockedCells[r][col]) {
-                continue;
-            }
-            if (!safeEquals(currentGrid[r][col], answerGrid[r][col])) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private boolean isWin() {
@@ -294,9 +386,6 @@ public class GameViewModel extends AndroidViewModel {
         return row >= 0 && row < rows && col >= 0 && col < cols;
     }
 
-    private boolean isBlockedToken(String token) {
-        return TextUtils.isEmpty(token) || BLOCK_TOKEN.equals(token);
-    }
 
     private boolean safeEquals(String a, String b) {
         return (a == null && b == null) || (a != null && a.equals(b));

@@ -4,6 +4,8 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Query;
 
+import java.util.List;
+
 import ir.baran.bookPack.game.data.model.LevelEntity;
 
 @Dao
@@ -17,4 +19,7 @@ public interface LevelDao {
 
     @Query("UPDATE Levels SET is_completed = 1 WHERE id = :levelId")
     void markLevelCompleted(int levelId);
+
+    @Query("SELECT * FROM Levels ORDER BY id ASC")
+    List<LevelEntity> getAllLevelsSync();
 }

@@ -3,28 +3,30 @@ package ir.baran.bookPack.game.data.model;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
 @Entity(tableName = "Categories")
 public class CategoryEntity {
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    private int id;
+    private Integer id;
 
     @ColumnInfo(name = "name")
+    @NonNull
     private String name;
 
     @ColumnInfo(name = "description")
     private String description;
 
-    @ColumnInfo(name = "is_unlocked")
-    private int isUnlocked;
+    @ColumnInfo(name = "is_unlocked", defaultValue = "0")
+    private Integer isUnlocked;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -44,11 +46,11 @@ public class CategoryEntity {
         this.description = description;
     }
 
-    public int getIsUnlocked() {
+    public Integer getIsUnlocked() {
         return isUnlocked;
     }
 
-    public void setIsUnlocked(int isUnlocked) {
+    public void setIsUnlocked(Integer isUnlocked) {
         this.isUnlocked = isUnlocked;
     }
 }

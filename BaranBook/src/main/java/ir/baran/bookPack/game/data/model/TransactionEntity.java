@@ -3,18 +3,21 @@ package ir.baran.bookPack.game.data.model;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
 @Entity(tableName = "Transactions")
 public class TransactionEntity {
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    private int id;
+    private Integer id;
 
     @ColumnInfo(name = "sku_id")
+    @NonNull
     private String skuId;
 
     @ColumnInfo(name = "purchase_token")
+    @NonNull
     private String purchaseToken;
 
     @ColumnInfo(name = "purchase_date")
@@ -23,8 +26,8 @@ public class TransactionEntity {
     @ColumnInfo(name = "amount")
     private int amount;
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
     public String getSkuId() { return skuId; }
     public void setSkuId(String skuId) { this.skuId = skuId; }
     public String getPurchaseToken() { return purchaseToken; }
