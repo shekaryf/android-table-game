@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
 @Entity(tableName = "DailyPuzzles")
+/**
+ * موجودیت چالش روزانه مطابق جدول DailyPuzzles.
+ */
 public class DailyPuzzleEntity {
 
     @PrimaryKey(autoGenerate = true)

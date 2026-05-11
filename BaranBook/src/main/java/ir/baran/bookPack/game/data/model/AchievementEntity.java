@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
 @Entity(tableName = "Achievements")
+/**
+ * موجودیت دستاوردها مطابق جدول Achievements.
+ */
 public class AchievementEntity {
 
     @PrimaryKey(autoGenerate = true)

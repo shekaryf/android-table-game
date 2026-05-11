@@ -9,6 +9,9 @@ import java.util.List;
 import ir.baran.bookPack.game.data.model.LevelEntity;
 
 @Dao
+/**
+ * دسترسی به داده‌های جدول مراحل (Levels).
+ */
 public interface LevelDao {
 
     @Query("SELECT * FROM Levels WHERE id = :levelId LIMIT 1")

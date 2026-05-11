@@ -14,6 +14,9 @@ import androidx.annotation.NonNull;
                 childColumns = "category_id"
         )
 )
+/**
+ * موجودیت مرحله شامل ابعاد جدول، داده حروف و راهنماها.
+ */
 public class LevelEntity {
 
     @PrimaryKey(autoGenerate = true)

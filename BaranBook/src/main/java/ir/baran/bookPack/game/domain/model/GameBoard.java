@@ -2,6 +2,9 @@ package ir.baran.bookPack.game.domain.model;
 
 import java.util.List;
 
+/**
+ * مدل نمایشی کل جدول برای ارسال به UI.
+ */
 public class GameBoard {
 
     private final int levelId;

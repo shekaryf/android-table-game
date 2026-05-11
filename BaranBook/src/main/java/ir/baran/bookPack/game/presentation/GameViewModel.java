@@ -23,6 +23,9 @@ import ir.baran.bookPack.game.domain.model.CellState;
 import ir.baran.bookPack.game.domain.model.GameBoard;
 import ir.baran.bookPack.game.domain.model.GameCell;
 
+/**
+ * منطق اصلی بازی: بارگذاری مرحله، درهم‌سازی، جابه‌جایی، قفل صحیح‌ها و برد.
+ */
 public class GameViewModel extends AndroidViewModel {
 
     private static final String BLOCK_TOKEN = "*";
@@ -88,6 +91,7 @@ public class GameViewModel extends AndroidViewModel {
     }
 
     public void loadLevel(int levelId) {
+        // شروع/تعویض مرحله جاری و ریست وضعیت برد
         winLiveData.setValue(false);
         clearSelection();
 
@@ -100,6 +104,7 @@ public class GameViewModel extends AndroidViewModel {
     }
 
     public void onCellTapped(int row, int col) {
+        // فقط سلول‌های قابل‌جابجایی پردازش می‌شوند
         if (!isInsideGrid(row, col) || blockedCells == null || blockedCells[row][col] || lockedCells[row][col]) {
             return;
         }
@@ -148,6 +153,7 @@ public class GameViewModel extends AndroidViewModel {
     }
 
     private void initializeBoardFromLevel(LevelEntity level) {
+        // خواندن جواب صحیح از grid_data و ساخت حالت اولیه مرحله
         if (TextUtils.isEmpty(level.getGridData())) {
             errorLiveData.postValue("Level grid_data is empty.");
             return;
@@ -254,6 +260,7 @@ public class GameViewModel extends AndroidViewModel {
     }
 
     private void scrambleMovableLetters() {
+        // حروف قابل بازی جمع‌آوری و به صورت تصادفی بین خانه‌های قابل‌جابجایی پخش می‌شوند
         List<String> movableLetters = new ArrayList<>();
         List<int[]> movablePositions = new ArrayList<>();
 
@@ -320,6 +327,7 @@ public class GameViewModel extends AndroidViewModel {
     }
 
     private void updateLockedCellsByCorrectLetters() {
+        // بعد از هر حرکت، حروفی که دقیقاً در جای صحیح هستند قفل می‌شوند
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 if (blockedCells[r][c] || lockedCells[r][c]) {
@@ -333,6 +341,7 @@ public class GameViewModel extends AndroidViewModel {
     }
 
     private boolean isWin() {
+        // برد زمانی است که تمام خانه‌های قابل بازی با جواب برابر شوند
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 if (blockedCells[r][c]) {

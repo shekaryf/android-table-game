@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
 @Entity(tableName = "Categories")
+/**
+ * موجودیت دسته‌بندی‌ها مطابق جدول Categories.
+ */
 public class CategoryEntity {
 
     @PrimaryKey(autoGenerate = true)

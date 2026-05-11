@@ -17,6 +17,9 @@ import ir.baran.bookPack.game.data.model.LevelEntity;
 import ir.baran.bookPack.game.data.model.UserEntity;
 import ir.baran.bookPack.game.data.validation.GridDataValidator;
 
+/**
+ * لایه Repository: اتصال ViewModel به DAO و عملیات پس‌زمینه.
+ */
 public class GameRepository {
 
     private static final String TAG = "GameRepository";
@@ -45,6 +48,7 @@ public class GameRepository {
         ioExecutor.execute(new Runnable() {
             @Override
             public void run() {
+                // عملیات پس از برد: تکمیل مرحله + پاداش سکه + رفتن به مرحله بعد
                 levelDao.markLevelCompleted(completedLevelId);
                 userDao.rewardAndMoveToNextLevel(WIN_REWARD_COINS, completedLevelId + 1);
             }
@@ -59,6 +63,7 @@ public class GameRepository {
         ioExecutor.execute(new Runnable() {
             @Override
             public void run() {
+                // اعتبارسنجی همه مراحل در Thread پس‌زمینه
                 List<LevelEntity> levels = levelDao.getAllLevelsSync();
                 List<String> allErrors = new ArrayList<>();
                 if (levels == null || levels.isEmpty()) {

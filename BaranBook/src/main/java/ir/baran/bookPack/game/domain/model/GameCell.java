@@ -1,5 +1,8 @@
 package ir.baran.bookPack.game.domain.model;
 
+/**
+ * مدل نمایشی هر خانه جدول (حرف + وضعیت + مختصات).
+ */
 public class GameCell {
 
     private final int row;

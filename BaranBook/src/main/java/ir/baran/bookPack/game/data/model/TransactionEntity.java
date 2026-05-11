@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
 @Entity(tableName = "Transactions")
+/**
+ * موجودیت تراکنش فروشگاه مطابق جدول Transactions.
+ */
 public class TransactionEntity {
 
     @PrimaryKey(autoGenerate = true)

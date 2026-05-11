@@ -5,6 +5,9 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "User")
+/**
+ * موجودیت کاربر محلی (تنها یک رکورد با id=1).
+ */
 public class UserEntity {
 
     @PrimaryKey

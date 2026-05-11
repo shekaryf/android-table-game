@@ -7,6 +7,9 @@ import androidx.room.Query;
 import ir.baran.bookPack.game.data.model.UserEntity;
 
 @Dao
+/**
+ * دسترسی به داده کاربر برای سکه و پیشروی مرحله.
+ */
 public interface UserDao {
 
     @Query("SELECT * FROM User WHERE id = 1 LIMIT 1")
