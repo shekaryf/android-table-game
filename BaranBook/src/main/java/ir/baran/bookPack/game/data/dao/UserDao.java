@@ -18,6 +18,9 @@ public interface UserDao {
     @Query("SELECT * FROM User WHERE id = 1 LIMIT 1")
     UserEntity getUserSync();
 
-    @Query("UPDATE User SET coins = coins + :coinReward, current_level_id = :nextLevelId WHERE id = 1")
-    void rewardAndMoveToNextLevel(int coinReward, int nextLevelId);
+    @Query("UPDATE User SET coins = coins + :coinReward WHERE id = 1")
+    void addCoins(int coinReward);
+
+    @Query("UPDATE User SET current_level_id = :levelId WHERE id = 1")
+    void setCurrentLevelId(int levelId);
 }

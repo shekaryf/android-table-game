@@ -48,9 +48,53 @@ public class GameRepository {
         ioExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                // عملیات پس از برد: تکمیل مرحله + پاداش سکه + رفتن به مرحله بعد
+                // عملیات پس از برد: تکمیل مرحله + پاداش سکه
                 levelDao.markLevelCompleted(completedLevelId);
-                userDao.rewardAndMoveToNextLevel(WIN_REWARD_COINS, completedLevelId + 1);
+                userDao.addCoins(WIN_REWARD_COINS);
+            }
+        });
+    }
+
+    public interface IntCallback {
+        void onResult(int value);
+    }
+
+    public interface BooleanCallback {
+        void onResult(boolean value);
+    }
+
+    public void getCurrentLevelIdAsync(final IntCallback callback) {
+        ioExecutor.execute(() -> {
+            UserEntity user = userDao.getUserSync();
+            int levelId = 1;
+            if (user != null && user.getCurrentLevelId() != null && user.getCurrentLevelId() > 0) {
+                levelId = user.getCurrentLevelId();
+            }
+            if (callback != null) {
+                callback.onResult(levelId);
+            }
+        });
+    }
+
+    public void setCurrentLevelIdAsync(final int levelId) {
+        ioExecutor.execute(() -> userDao.setCurrentLevelId(levelId));
+    }
+
+    public void isLevelCompletedAsync(final int levelId, final BooleanCallback callback) {
+        ioExecutor.execute(() -> {
+            Integer completed = levelDao.getIsCompletedById(levelId);
+            boolean isCompleted = completed != null && completed == 1;
+            if (callback != null) {
+                callback.onResult(isCompleted);
+            }
+        });
+    }
+
+    public void hasLevelAsync(final int levelId, final BooleanCallback callback) {
+        ioExecutor.execute(() -> {
+            int count = levelDao.countById(levelId);
+            if (callback != null) {
+                callback.onResult(count > 0);
             }
         });
     }

@@ -3,6 +3,7 @@ package ir.baran.bookPack;
 import ir.baran.baranBook.R;
 import ir.baran.book.SplashPage;
 import ir.baran.framework.database.DataBaseHelper;
+import ir.baran.framework.utilities.ConfigurationUtils;
 import ir.baran.framework.utilities.Functions;
 import ir.baran.framework.utilities.MyConfig;
 import android.content.Intent;
@@ -14,6 +15,7 @@ public class FirstSplashPage extends SplashPage {
 	protected void initProject(ViewGroup llSplash) {
 		MyConfig._AppName = Functions.getApplicationName(this);
 		DataBaseHelper.DB_NAME = "dt";
+
 		BgMediaPlayer.getInstance(this);
 		DataBaseHelper.databaseHelper(this, 2000);
 		MyConfig._AssetManager = getAssets();

@@ -1,9 +1,11 @@
 package ir.baran.bookPack;
 
 import android.app.AlertDialog;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,6 +14,7 @@ import android.view.Gravity;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
+import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -35,8 +38,10 @@ import java.util.Map;
 import ir.baran.bookPack.game.domain.model.CellState;
 import ir.baran.bookPack.game.domain.model.GameBoard;
 import ir.baran.bookPack.game.domain.model.GameCell;
+import ir.baran.bookPack.game.data.repository.GameRepository;
 import ir.baran.bookPack.game.presentation.GameViewModel;
 import ir.baran.framework.forms.Form;
+import ir.baran.framework.utilities.ConfigurationUtils;
 import ir.baran.framework.utilities.Functions;
 import ir.baran.framework.utilities.MyConfig;
 
@@ -70,17 +75,66 @@ public class GamePage extends Form {
     private int currentLevelId = -1;
     private int winHandledLevelId = -1;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
+    private GameRepository repository;
+    private Button btnPrev;
+    private Button btnNext;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         viewModel = new ViewModelProvider(this).get(GameViewModel.class);
+        repository = new GameRepository(getApplicationContext());
         subscribeToViewModel();
         viewModel.validateAllLevels();
 
-        int levelId = getIntent() != null ? getIntent().getIntExtra(EXTRA_LEVEL_ID, 1) : 1;
-        viewModel.loadLevel(levelId);
+        int requestedLevel = getIntent() != null ? getIntent().getIntExtra(EXTRA_LEVEL_ID, -1) : -1;
+        if (requestedLevel > 0) {
+            viewModel.loadLevel(requestedLevel);
+            repository.setCurrentLevelIdAsync(requestedLevel);
+        } else {
+            repository.getCurrentLevelIdAsync(levelId -> uiHandler.post(() -> viewModel.loadLevel(levelId)));
+        }
+    }
+
+    @Override
+    protected void initFooter(LinearLayout llFooter) {
+        llFooter.setOrientation(LinearLayout.HORIZONTAL);
+        llFooter.setPadding(dp(12), dp(6), dp(12), dp(8));
+        llFooter.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        btnPrev = new Button(this);
+        btnPrev.setText("مرحله قبل");
+        btnPrev.setOnClickListener(v -> {
+            if (currentLevelId > 1) {
+                int prev = currentLevelId - 1;
+                viewModel.loadLevel(prev);
+                repository.setCurrentLevelIdAsync(prev);
+            }
+        });
+
+        btnNext = new Button(this);
+        btnNext.setText("مرحله بعد");
+        btnNext.setEnabled(false);
+        btnNext.setOnClickListener(v -> {
+            int next = currentLevelId + 1;
+            repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> {
+                if (completed) {
+                    viewModel.loadLevel(next);
+                    repository.setCurrentLevelIdAsync(next);
+                } else {
+                    showMessage("مرحله بعد هنوز آزاد نشده است.");
+                }
+            }));
+        });
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lp.rightMargin = dp(6);
+        llFooter.addView(btnPrev, lp);
+
+        LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lp2.leftMargin = dp(6);
+        llFooter.addView(btnNext, lp2);
     }
 
     @Override
@@ -92,7 +146,7 @@ public class GamePage extends Form {
         llContent.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
 
         tvTitle = new TextView(this);
-        tvTitle.setText("Scramble & Swap");
+        tvTitle.setText("انتخاب و جا به جایی");
         tvTitle.setTextColor(COLOR_TEXT);
         tvTitle.setTypeface(Typeface.DEFAULT_BOLD);
         tvTitle.setTextSize(22f);
@@ -169,6 +223,10 @@ public class GamePage extends Form {
         gridLayout.setOnTouchListener(zoomTouchListener);
         verticalScrollView.setOnTouchListener(zoomTouchListener);
         horizontalScrollView.setOnTouchListener(zoomTouchListener);
+        float dif = ConfigurationUtils.getTextSizeDiferent(MyConfig._FirstForm);
+        ConfigurationUtils.initTypefacesAndSize(llContent
+                , ConfigurationUtils.getLabelFont(GamePage.this)
+                , ConfigurationUtils.START_SIZE * dif);
     }
 
     private void subscribeToViewModel() {
@@ -181,13 +239,8 @@ public class GamePage extends Form {
                     return;
                 }
                 winHandledLevelId = finishedLevel;
-                showMessage("تبریک! مرحله " + finishedLevel + " کامل شد. ورود به مرحله بعد...");
-
-                uiHandler.postDelayed(() -> {
-                    int nextLevel = finishedLevel + 1;
-                    viewModel.loadLevel(nextLevel);
-                    showMessage("مرحله " + nextLevel + " شروع شد.");
-                }, 900);
+                playSoundFromAssets("applause.mp3");
+                showWinConfirmDialog(finishedLevel);
             }
         });
 
@@ -214,6 +267,8 @@ public class GamePage extends Form {
             currentLevelId = board.getLevelId();
             zoomFactor = 1f;
             winHandledLevelId = -1;
+            repository.setCurrentLevelIdAsync(currentLevelId);
+            refreshFooterButtons();
         }
         currentBoard = board;
         renderBoardInternal(board);
@@ -227,7 +282,7 @@ public class GamePage extends Form {
         List<List<GameCell>> rows = board.getCells();
         int rowCount = rows.size();
         int colCount = rowCount > 0 ? rows.get(0).size() : 0;
-        tvTitle.setText("Level " + board.getLevelId());
+        tvTitle.setText("مرحله " + board.getLevelId());
 
         Map<String, List<ClueItem>> clueMap = parseCluesByAnchor(board.getCluesDataJson());
 
@@ -257,8 +312,10 @@ public class GamePage extends Form {
         TextView tv = new TextView(this);
         tv.setGravity(Gravity.CENTER);
         tv.setTextColor(cell.getState() == CellState.BLOCKED ? COLOR_SUBTEXT : COLOR_TEXT);
-        tv.setTypeface(cell.getState() == CellState.BLOCKED ? Typeface.DEFAULT : Typeface.DEFAULT_BOLD);
-        tv.setTextSize(cell.getState() == CellState.BLOCKED ? 12f : 18f);
+        Typeface tf2 = ConfigurationUtils.getLabelFont2(GamePage.this);
+        Typeface tf1 = ConfigurationUtils.getLabelFont(GamePage.this);
+        tv.setTypeface(cell.getState() == CellState.BLOCKED ? tf1 : tf2);
+        tv.setTextSize(cell.getState() == CellState.BLOCKED ? clueFontSizeForCell(cellSize) : letterFontSizeForCell(cellSize));
         tv.setText(safeLetter(cell.getLetter()));
 
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
@@ -270,6 +327,7 @@ public class GamePage extends Form {
         if (cell.getState() == CellState.MOVABLE || cell.getState() == CellState.SELECTED) {
             tv.setOnClickListener(v -> {
                 runTapAnimation(v);
+                playSoundFromAssets("click.mp3");
                 viewModel.onCellTapped(cell.getRow(), cell.getCol());
             });
         }
@@ -299,7 +357,7 @@ public class GamePage extends Form {
 
             TextView tv = new TextView(this);
             tv.setTextColor(COLOR_SUBTEXT);
-            tv.setTextSize(10f);
+            tv.setTextSize(clueInlineFontSizeForCell(cellSize));
             tv.setSingleLine(true);
             tv.setEllipsize(TextUtils.TruncateAt.END);
             tv.setText(clue.clue);
@@ -345,6 +403,49 @@ public class GamePage extends Form {
                 .setMessage(sb.toString())
                 .setPositiveButton("بستن", null)
                 .show();
+    }
+
+    private void showWinConfirmDialog(int finishedLevel) {
+        int nextLevel = finishedLevel + 1;
+        new AlertDialog.Builder(this)
+                .setTitle("تبریک")
+                .setMessage("مرحله " + finishedLevel + " کامل شد. ورود به مرحله " + nextLevel + "؟")
+                .setPositiveButton("بله", (dialog, which) -> {
+                    repository.hasLevelAsync(nextLevel, exists -> uiHandler.post(() -> {
+                        if (exists) {
+                            viewModel.loadLevel(nextLevel);
+                            repository.setCurrentLevelIdAsync(nextLevel);
+                            showMessage("مرحله " + nextLevel + " شروع شد.");
+                        } else {
+                            showMessage("مرحله بعدی موجود نیست.");
+                        }
+                    }));
+                })
+                .setNegativeButton("خیر", null)
+                .show();
+    }
+
+    private void refreshFooterButtons() {
+        if (btnPrev != null) {
+            btnPrev.setEnabled(currentLevelId > 1);
+        }
+        if (btnNext != null && currentLevelId > 0) {
+            int next = currentLevelId + 1;
+            repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> btnNext.setEnabled(completed)));
+        }
+    }
+
+    private void playSoundFromAssets(String assetName) {
+        try {
+            AssetFileDescriptor afd = getAssets().openFd(assetName);
+            MediaPlayer player = new MediaPlayer();
+            player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            afd.close();
+            player.setOnCompletionListener(MediaPlayer::release);
+            player.prepare();
+            player.start();
+        } catch (Exception ignored) {
+        }
     }
 
     private Map<String, List<ClueItem>> parseCluesByAnchor(String cluesJson) {
@@ -500,6 +601,23 @@ public class GamePage extends Form {
 
     private String key(int row, int col) {
         return row + "_" + col;
+    }
+
+    private float letterFontSizeForCell(int cellSizePx) {
+        // با زوم جدول، فونت حروف هم متناسب با اندازه سلول تغییر می‌کند.
+        return clamp(cellSizePx / 3.0f, 14f, 40f);
+    }
+
+    private float clueFontSizeForCell(int cellSizePx) {
+        return clamp(cellSizePx / 5.2f, 9f, 19f);
+    }
+
+    private float clueInlineFontSizeForCell(int cellSizePx) {
+        return clamp(cellSizePx / 6.2f, 8f, 16f);
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static class ClueItem {

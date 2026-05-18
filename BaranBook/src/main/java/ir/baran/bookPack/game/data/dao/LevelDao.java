@@ -25,4 +25,10 @@ public interface LevelDao {
 
     @Query("SELECT * FROM Levels ORDER BY id ASC")
     List<LevelEntity> getAllLevelsSync();
+
+    @Query("SELECT COUNT(*) FROM Levels WHERE id = :levelId")
+    int countById(int levelId);
+
+    @Query("SELECT is_completed FROM Levels WHERE id = :levelId LIMIT 1")
+    Integer getIsCompletedById(int levelId);
 }
