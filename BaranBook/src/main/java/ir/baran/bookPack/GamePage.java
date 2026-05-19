@@ -1,7 +1,7 @@
 package ir.baran.bookPack;
 
-import android.app.AlertDialog;
 import android.content.res.AssetFileDescriptor;
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -14,7 +14,7 @@ import android.view.Gravity;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
-import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -24,6 +24,9 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,10 +38,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import ir.baran.bookPack.game.data.repository.GameRepository;
 import ir.baran.bookPack.game.domain.model.CellState;
 import ir.baran.bookPack.game.domain.model.GameBoard;
 import ir.baran.bookPack.game.domain.model.GameCell;
-import ir.baran.bookPack.game.data.repository.GameRepository;
 import ir.baran.bookPack.game.presentation.GameViewModel;
 import ir.baran.framework.forms.Form;
 import ir.baran.framework.utilities.ConfigurationUtils;
@@ -52,15 +55,25 @@ public class GamePage extends Form {
 
     public static final String EXTRA_LEVEL_ID = "level_id";
 
-    private static final int COLOR_BG_PAGE = 0xFFF6F5F2;
-    private static final int COLOR_CELL_MOVABLE = 0xFFFFFFFF;
-    private static final int COLOR_CELL_SELECTED = 0xFFFFE082;
-    private static final int COLOR_CELL_LOCKED = 0xFF81C784;
-    private static final int COLOR_CELL_BLOCKED = 0xFFECEFF1;
-    private static final int COLOR_TEXT = 0xFF1F2933;
-    private static final int COLOR_SUBTEXT = 0xFF52606D;
+    private int colorBgPage;
+    private int colorCellMovable;
+    private int colorCellSelected;
+    private int colorCellLocked;
+    private int colorCellBlocked;
+    private int colorText;
+    private int colorSubtext;
+
+    private int colorBtnEnabledBg;
+    private int colorBtnDisabledBg;
+    private int colorBtnEnabledText;
+    private int colorBtnDisabledText;
+    private int colorBtnEnabledStroke;
+    private int colorBtnDisabledStroke;
+    private int colorBtnRipple;
 
     private GameViewModel viewModel;
+    private GameRepository repository;
+
     private GridLayout gridLayout;
     private TextView tvTitle;
     private TextView tvHint;
@@ -68,16 +81,18 @@ public class GamePage extends Form {
     private HorizontalScrollView horizontalScrollView;
     private ScrollView verticalScrollView;
 
+    private MaterialButton btnPrev;
+    private MaterialButton btnNext;
+
     private float zoomFactor = 1f;
     private ScaleGestureDetector scaleDetector;
     private final Map<String, Drawable> arrowCache = new HashMap<>();
+
     private GameBoard currentBoard;
     private int currentLevelId = -1;
     private int winHandledLevelId = -1;
+
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
-    private GameRepository repository;
-    private Button btnPrev;
-    private Button btnNext;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,6 +100,7 @@ public class GamePage extends Form {
 
         viewModel = new ViewModelProvider(this).get(GameViewModel.class);
         repository = new GameRepository(getApplicationContext());
+        initPalette();
         subscribeToViewModel();
         viewModel.validateAllLevels();
 
@@ -103,8 +119,13 @@ public class GamePage extends Form {
         llFooter.setPadding(dp(12), dp(6), dp(12), dp(8));
         llFooter.setGravity(Gravity.CENTER_HORIZONTAL);
 
-        btnPrev = new Button(this);
+        btnPrev = new MaterialButton(this);
         btnPrev.setText("مرحله قبل");
+        btnPrev.setIconResource(ir.baran.baranBook.R.drawable.ic_prev_level);
+        btnPrev.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START);
+        btnPrev.setIconPadding(dp(6));
+        btnPrev.setCornerRadius(dp(12));
+        btnPrev.setRippleColor(ColorStateList.valueOf(colorBtnRipple));
         btnPrev.setOnClickListener(v -> {
             if (currentLevelId > 1) {
                 int prev = currentLevelId - 1;
@@ -113,8 +134,13 @@ public class GamePage extends Form {
             }
         });
 
-        btnNext = new Button(this);
+        btnNext = new MaterialButton(this);
         btnNext.setText("مرحله بعد");
+        btnNext.setIconResource(ir.baran.baranBook.R.drawable.ic_next_level);
+        btnNext.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_END);
+        btnNext.setIconPadding(dp(6));
+        btnNext.setCornerRadius(dp(12));
+        btnNext.setRippleColor(ColorStateList.valueOf(colorBtnRipple));
         btnNext.setEnabled(false);
         btnNext.setOnClickListener(v -> {
             int next = currentLevelId + 1;
@@ -128,26 +154,30 @@ public class GamePage extends Form {
             }));
         });
 
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        lp.rightMargin = dp(6);
-        llFooter.addView(btnPrev, lp);
+        LinearLayout.LayoutParams lpPrev = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lpPrev.rightMargin = dp(6);
+        llFooter.addView(btnPrev, lpPrev);
 
-        LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        lp2.leftMargin = dp(6);
-        llFooter.addView(btnNext, lp2);
+        LinearLayout.LayoutParams lpNext = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lpNext.leftMargin = dp(6);
+        llFooter.addView(btnNext, lpNext);
+
+        styleFooterButton(btnPrev, false);
+        styleFooterButton(btnNext, false);
     }
 
     @Override
     public void initContent(LinearLayout llContent) {
         MyConfig._FirstForm = this;
-        llContent.setBackgroundColor(COLOR_BG_PAGE);
+
+        llContent.setBackgroundColor(colorBgPage);
         llContent.setOrientation(LinearLayout.VERTICAL);
         llContent.setPadding(dp(12), dp(12), dp(12), dp(12));
         llContent.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
 
         tvTitle = new TextView(this);
         tvTitle.setText("انتخاب و جا به جایی");
-        tvTitle.setTextColor(COLOR_TEXT);
+        tvTitle.setTextColor(colorText);
         tvTitle.setTypeface(Typeface.DEFAULT_BOLD);
         tvTitle.setTextSize(22f);
         tvTitle.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -158,7 +188,7 @@ public class GamePage extends Form {
 
         tvHint = new TextView(this);
         tvHint.setText("دو حرف را انتخاب کن تا جابه‌جا شوند. بزرگنمایی با دو انگشت فعال است.");
-        tvHint.setTextColor(COLOR_SUBTEXT);
+        tvHint.setTextColor(colorSubtext);
         tvHint.setTextSize(14f);
         tvHint.setGravity(Gravity.CENTER_HORIZONTAL);
         tvHint.setPadding(0, dp(4), 0, dp(10));
@@ -198,10 +228,16 @@ public class GamePage extends Form {
 
         gridLayout = new GridLayout(this);
         gridLayout.setUseDefaultMargins(true);
+        gridLayout.setClipChildren(false);
+        gridLayout.setClipToPadding(false);
         boardWrapper.addView(gridLayout, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         ));
+        boardWrapper.setClipChildren(false);
+        boardWrapper.setClipToPadding(false);
+        verticalScrollView.setClipChildren(false);
+        horizontalScrollView.setClipChildren(false);
 
         scaleDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
@@ -223,10 +259,13 @@ public class GamePage extends Form {
         gridLayout.setOnTouchListener(zoomTouchListener);
         verticalScrollView.setOnTouchListener(zoomTouchListener);
         horizontalScrollView.setOnTouchListener(zoomTouchListener);
+
         float dif = ConfigurationUtils.getTextSizeDiferent(MyConfig._FirstForm);
-        ConfigurationUtils.initTypefacesAndSize(llContent
-                , ConfigurationUtils.getLabelFont(GamePage.this)
-                , ConfigurationUtils.START_SIZE * dif);
+        ConfigurationUtils.initTypefacesAndSize(
+                llContent,
+                ConfigurationUtils.getLabelFont(GamePage.this),
+                ConfigurationUtils.START_SIZE * dif
+        );
     }
 
     private void subscribeToViewModel() {
@@ -254,8 +293,7 @@ public class GamePage extends Form {
             if (errors == null || errors.isEmpty()) {
                 return;
             }
-            String first = errors.get(0);
-            showMessage("خطای داده مرحله: " + first);
+            showMessage("خطای داده مرحله: " + errors.get(0));
         });
     }
 
@@ -263,6 +301,7 @@ public class GamePage extends Form {
         if (board == null || board.getCells() == null) {
             return;
         }
+
         if (board.getLevelId() != currentLevelId) {
             currentLevelId = board.getLevelId();
             zoomFactor = 1f;
@@ -270,6 +309,7 @@ public class GamePage extends Form {
             repository.setCurrentLevelIdAsync(currentLevelId);
             refreshFooterButtons();
         }
+
         currentBoard = board;
         renderBoardInternal(board);
     }
@@ -290,9 +330,9 @@ public class GamePage extends Form {
         gridLayout.setRowCount(rowCount);
         gridLayout.setColumnCount(colCount);
 
-        // اندازه هر خانه بر اساس عرض صفحه و سطح زوم محاسبه می‌شود
         int baseSize = calculateCellSize(colCount);
         int cellSize = Math.max(dp(34), Math.min(dp(140), (int) (baseSize * zoomFactor)));
+
         for (int r = 0; r < rowCount; r++) {
             List<GameCell> row = rows.get(r);
             for (int c = 0; c < colCount; c++) {
@@ -306,12 +346,13 @@ public class GamePage extends Form {
 
     private View buildCellView(GameCell cell, int cellSize, List<ClueItem> cluesAtCell) {
         if (cell.getState() == CellState.BLOCKED && cluesAtCell != null && !cluesAtCell.isEmpty()) {
-            return buildClueCell(cell, cellSize, cluesAtCell);
+            return buildClueCell(cellSize, cluesAtCell);
         }
 
         TextView tv = new TextView(this);
         tv.setGravity(Gravity.CENTER);
-        tv.setTextColor(cell.getState() == CellState.BLOCKED ? COLOR_SUBTEXT : COLOR_TEXT);
+        tv.setTextColor(cell.getState() == CellState.BLOCKED ? colorSubtext : colorText);
+
         Typeface tf2 = ConfigurationUtils.getLabelFont2(GamePage.this);
         Typeface tf1 = ConfigurationUtils.getLabelFont(GamePage.this);
         tv.setTypeface(cell.getState() == CellState.BLOCKED ? tf1 : tf2);
@@ -335,54 +376,164 @@ public class GamePage extends Form {
         return tv;
     }
 
-    private View buildClueCell(GameCell cell, int cellSize, List<ClueItem> cluesAtCell) {
-        // سلول راهنما: نمایش متن کوتاه + فلش جهت، و نمایش متن کامل با کلیک
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER_VERTICAL);
-        root.setPadding(dp(4), dp(4), dp(4), dp(4));
+    private View buildClueCell(int cellSize, List<ClueItem> cluesAtCell) {
+        FrameLayout root = new FrameLayout(this);
+        root.setClipChildren(false);
+        root.setClipToPadding(false);
 
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = cellSize;
         lp.height = cellSize;
         root.setLayoutParams(lp);
-        root.setBackground(createCellBackground(CellState.BLOCKED));
+
+        LinearLayout rowsContainer = new LinearLayout(this);
+        rowsContainer.setOrientation(LinearLayout.VERTICAL);
+        rowsContainer.setPadding(0, 0, 0, 0);
+        rowsContainer.setBackground(createCellBackground(CellState.BLOCKED));
+        rowsContainer.setClipChildren(false);
+        rowsContainer.setClipToPadding(false);
+        root.addView(rowsContainer, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
 
         int count = Math.min(2, cluesAtCell.size());
+        int iconSize = Math.max(dp(20), Math.min(dp(38), cellSize / 3));
         for (int i = 0; i < count; i++) {
             ClueItem clue = cluesAtCell.get(i);
-            LinearLayout line = new LinearLayout(this);
-            line.setOrientation(LinearLayout.HORIZONTAL);
-            line.setGravity(Gravity.CENTER_VERTICAL);
+            String normalizedDir = normalizeDirection(clue.direction);
+
+            FrameLayout clueBox = new FrameLayout(this);
+            clueBox.setBackground(createMiniClueBoxBackground(i == 0, count));
+            clueBox.setClipChildren(false);
+            clueBox.setClipToPadding(false);
+            clueBox.setClickable(true);
+            clueBox.setOnClickListener(v -> showSingleClueDialog(clue));
 
             TextView tv = new TextView(this);
-            tv.setTextColor(COLOR_SUBTEXT);
+            tv.setTextColor(colorSubtext);
             tv.setTextSize(clueInlineFontSizeForCell(cellSize));
             tv.setSingleLine(true);
             tv.setEllipsize(TextUtils.TruncateAt.END);
             tv.setText(clue.clue);
+            tv.setGravity(Gravity.CENTER_VERTICAL);
 
-            LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            line.addView(tv, textLp);
+            int basePadStart = dp(5);
+            int basePadEnd = dp(5);
+            int extraPad = Math.max(dp(6), iconSize / 2);
+            if (isLeftFamily(normalizedDir)) {
+                tv.setPadding(basePadStart + extraPad, dp(2), basePadEnd, dp(2));
+            } else if (isRightFamily(normalizedDir)) {
+                tv.setPadding(basePadStart, dp(2), basePadEnd + extraPad, dp(2));
+            } else {
+                tv.setPadding(basePadStart, dp(2), basePadEnd, dp(2));
+            }
+
+            clueBox.addView(tv, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+            ));
 
             Drawable arrow = getArrowDrawable(clue.direction);
             if (arrow != null) {
                 ImageView iv = new ImageView(this);
                 iv.setImageDrawable(arrow);
-                LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(10), dp(10));
-                iconLp.leftMargin = dp(3);
-                line.addView(iv, iconLp);
+                iv.setClickable(false);
+                clueBox.addView(iv, clueArrowParams(normalizedDir, iconSize));
             }
 
-            root.addView(line, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     0,
                     1f
-            ));
+            );
+            rowsContainer.addView(clueBox, rowLp);
         }
 
-        root.setOnClickListener(v -> showFullCluesDialog(cluesAtCell));
         return root;
+    }
+
+    private FrameLayout.LayoutParams clueArrowParams(String dir, int iconSize) {
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(iconSize, iconSize);
+        int over = -(iconSize / 2);
+        int diagOver = -(iconSize / 3);
+        switch (dir) {
+            case "left":
+                lp.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
+                lp.leftMargin = over;
+                break;
+            case "right":
+                lp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+                lp.rightMargin = over;
+                break;
+            case "up":
+                lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+                lp.topMargin = over;
+                break;
+            case "down":
+                lp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+                lp.bottomMargin = over;
+                break;
+            case "up_left":
+            case "left_up":
+                lp.gravity = Gravity.TOP | Gravity.START;
+                lp.topMargin = diagOver;
+                lp.leftMargin = diagOver;
+                break;
+            case "up_right":
+            case "right_up":
+                lp.gravity = Gravity.TOP | Gravity.END;
+                lp.topMargin = diagOver;
+                lp.rightMargin = diagOver;
+                break;
+            case "down_left":
+            case "left_down":
+                lp.gravity = Gravity.BOTTOM | Gravity.START;
+                lp.bottomMargin = diagOver;
+                lp.leftMargin = diagOver;
+                break;
+            case "down_right":
+            case "right_down":
+                lp.gravity = Gravity.BOTTOM | Gravity.END;
+                lp.bottomMargin = diagOver;
+                lp.rightMargin = diagOver;
+                break;
+            default:
+                lp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+                lp.rightMargin = over;
+                break;
+        }
+        return lp;
+    }
+
+    private boolean isLeftFamily(String dir) {
+        return "left".equals(dir) || "left_up".equals(dir) || "up_left".equals(dir)
+                || "left_down".equals(dir) || "down_left".equals(dir);
+    }
+
+    private boolean isRightFamily(String dir) {
+        return "right".equals(dir) || "right_up".equals(dir) || "up_right".equals(dir)
+                || "right_down".equals(dir) || "down_right".equals(dir);
+    }
+
+    private GradientDrawable createMiniClueBoxBackground(boolean first, int count) {
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0x00000000);
+        bg.setStroke(dp(1), 0xFFCAD5E0);
+        if (count == 1) {
+            bg.setCornerRadius(dp(8));
+            return bg;
+        }
+        if (first) {
+            bg.setCornerRadii(new float[]{dp(8), dp(8), dp(8), dp(8), 0, 0, 0, 0});
+        } else {
+            bg.setCornerRadii(new float[]{0, 0, 0, 0, dp(8), dp(8), dp(8), dp(8)});
+        }
+        return bg;
+    }
+
+    private String normalizeDirection(String direction) {
+        return direction == null ? "" : direction.trim().toLowerCase(Locale.US).replace('-', '_');
     }
 
     private void showFullCluesDialog(List<ClueItem> cluesAtCell) {
@@ -398,7 +549,22 @@ public class GamePage extends Form {
             }
         }
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("متن کامل راهنما")
+                .setMessage(sb.toString())
+                .setPositiveButton("بستن", null)
+                .show();
+    }
+
+    private void showSingleClueDialog(ClueItem clue) {
+        if (clue == null) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder(clue.clue);
+        if (!TextUtils.isEmpty(clue.direction)) {
+            sb.append(" ( ").append(clue.direction).append(" )");
+        }
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("متن کامل راهنما")
                 .setMessage(sb.toString())
                 .setPositiveButton("بستن", null)
@@ -407,7 +573,7 @@ public class GamePage extends Form {
 
     private void showWinConfirmDialog(int finishedLevel) {
         int nextLevel = finishedLevel + 1;
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("تبریک")
                 .setMessage("مرحله " + finishedLevel + " کامل شد. ورود به مرحله " + nextLevel + "؟")
                 .setPositiveButton("بله", (dialog, which) -> {
@@ -427,12 +593,30 @@ public class GamePage extends Form {
 
     private void refreshFooterButtons() {
         if (btnPrev != null) {
-            btnPrev.setEnabled(currentLevelId > 1);
+            boolean enabledPrev = currentLevelId > 1;
+            btnPrev.setEnabled(enabledPrev);
+            styleFooterButton(btnPrev, enabledPrev);
         }
+
         if (btnNext != null && currentLevelId > 0) {
             int next = currentLevelId + 1;
-            repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> btnNext.setEnabled(completed)));
+            repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> {
+                btnNext.setEnabled(completed);
+                styleFooterButton(btnNext, completed);
+            }));
         }
+    }
+
+    private void styleFooterButton(MaterialButton button, boolean enabled) {
+        int bg = enabled ? colorBtnEnabledBg : colorBtnDisabledBg;
+        int txt = enabled ? colorBtnEnabledText : colorBtnDisabledText;
+        int stroke = enabled ? colorBtnEnabledStroke : colorBtnDisabledStroke;
+
+        button.setBackgroundTintList(ColorStateList.valueOf(bg));
+        button.setTextColor(txt);
+        button.setStrokeColor(ColorStateList.valueOf(stroke));
+        button.setStrokeWidth(dp(1));
+        button.setIconTint(ColorStateList.valueOf(txt));
     }
 
     private void playSoundFromAssets(String assetName) {
@@ -449,7 +633,6 @@ public class GamePage extends Form {
     }
 
     private Map<String, List<ClueItem>> parseCluesByAnchor(String cluesJson) {
-        // گروه‌بندی راهنماها بر اساس مختصات سلول لنگر (row/col)
         Map<String, List<ClueItem>> map = new HashMap<>();
         if (TextUtils.isEmpty(cluesJson)) {
             return map;
@@ -479,6 +662,7 @@ public class GamePage extends Form {
             }
         } catch (Exception ignored) {
         }
+
         return map;
     }
 
@@ -486,6 +670,7 @@ public class GamePage extends Form {
         if (TextUtils.isEmpty(direction)) {
             return null;
         }
+
         String normalized = direction.trim().toLowerCase(Locale.US).replace('-', '_');
         String fileName;
         switch (normalized) {
@@ -539,6 +724,7 @@ public class GamePage extends Form {
         if (Looper.myLooper() == null) {
             return;
         }
+
         ViewPropertyAnimator animator = v.animate();
         animator.cancel();
         animator.scaleX(0.93f)
@@ -556,17 +742,17 @@ public class GamePage extends Form {
         int fillColor;
         int strokeColor;
         if (state == CellState.BLOCKED) {
-            fillColor = COLOR_CELL_BLOCKED;
-            strokeColor = 0xFFB0BEC5;
+            fillColor = colorCellBlocked;
+            strokeColor = 0xFFD9E2EC;
         } else if (state == CellState.SELECTED) {
-            fillColor = COLOR_CELL_SELECTED;
-            strokeColor = 0xFFF9A825;
+            fillColor = colorCellSelected;
+            strokeColor = 0xFFE0A800;
         } else if (state == CellState.LOCKED) {
-            fillColor = COLOR_CELL_LOCKED;
-            strokeColor = 0xFF2E7D32;
+            fillColor = colorCellLocked;
+            strokeColor = 0xFF57A773;
         } else {
-            fillColor = COLOR_CELL_MOVABLE;
-            strokeColor = 0xFFD7CCC8;
+            fillColor = colorCellMovable;
+            strokeColor = 0xFFD9E2EC;
         }
 
         shape.setColor(fillColor);
@@ -578,6 +764,7 @@ public class GamePage extends Form {
         if (colCount <= 0) {
             return dp(42);
         }
+
         int totalHorizontalPadding = dp(36);
         int totalWidth = getScreenWidth() - totalHorizontalPadding;
         int maxSizeByWidth = totalWidth / colCount;
@@ -604,7 +791,6 @@ public class GamePage extends Form {
     }
 
     private float letterFontSizeForCell(int cellSizePx) {
-        // با زوم جدول، فونت حروف هم متناسب با اندازه سلول تغییر می‌کند.
         return clamp(cellSizePx / 3.0f, 14f, 40f);
     }
 
@@ -618,6 +804,28 @@ public class GamePage extends Form {
 
     private float clamp(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private void initPalette() {
+        colorBgPage = getColorCompat(ir.baran.baranBook.R.color.game_bg_page);
+        colorCellMovable = getColorCompat(ir.baran.baranBook.R.color.game_cell_movable);
+        colorCellSelected = getColorCompat(ir.baran.baranBook.R.color.game_cell_selected);
+        colorCellLocked = getColorCompat(ir.baran.baranBook.R.color.game_cell_locked);
+        colorCellBlocked = getColorCompat(ir.baran.baranBook.R.color.game_cell_blocked);
+        colorText = getColorCompat(ir.baran.baranBook.R.color.game_text_primary);
+        colorSubtext = getColorCompat(ir.baran.baranBook.R.color.game_text_secondary);
+
+        colorBtnEnabledBg = getColorCompat(ir.baran.baranBook.R.color.game_btn_enabled_bg);
+        colorBtnDisabledBg = getColorCompat(ir.baran.baranBook.R.color.game_btn_disabled_bg);
+        colorBtnEnabledText = getColorCompat(ir.baran.baranBook.R.color.game_btn_enabled_text);
+        colorBtnDisabledText = getColorCompat(ir.baran.baranBook.R.color.game_btn_disabled_text);
+        colorBtnEnabledStroke = getColorCompat(ir.baran.baranBook.R.color.game_btn_enabled_stroke);
+        colorBtnDisabledStroke = getColorCompat(ir.baran.baranBook.R.color.game_btn_disabled_stroke);
+        colorBtnRipple = getColorCompat(ir.baran.baranBook.R.color.game_btn_ripple);
+    }
+
+    private int getColorCompat(int colorRes) {
+        return androidx.core.content.ContextCompat.getColor(this, colorRes);
     }
 
     private static class ClueItem {

@@ -31,4 +31,22 @@
     <color name="page6Header1">#FFB24D3F</color>
     <color name="page6Header2">#FF32455D</color>
 
+    <!-- GamePage light palette -->
+    <color name="game_bg_page">#FFFAFCFF</color>
+    <color name="game_cell_movable">#FFFFFFFF</color>
+    <color name="game_cell_selected">#FFFFF4CC</color>
+    <color name="game_cell_locked">#FFDDF3E4</color>
+    <color name="game_cell_blocked">#FFF1F5F9</color>
+    <color name="game_text_primary">#FF243B53</color>
+    <color name="game_text_secondary">#FF627D98</color>
+
+    <!-- Game footer buttons -->
+    <color name="game_btn_enabled_bg">#FF5B8DEF</color>
+    <color name="game_btn_disabled_bg">#FFD8E1EC</color>
+    <color name="game_btn_enabled_text">#FFFFFFFF</color>
+    <color name="game_btn_disabled_text">#FF9AA5B1</color>
+    <color name="game_btn_enabled_stroke">#FF4C7CD9</color>
+    <color name="game_btn_disabled_stroke">#FFC2CDD9</color>
+    <color name="game_btn_ripple">#663D7BEA</color>
+
 </resources>

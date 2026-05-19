@@ -4,7 +4,6 @@ import ir.baran.framework.R;
 import ir.baran.framework.components.ConfirmDialog;
 import ir.baran.framework.utilities.Functions;
 import ir.baran.framework.utilities.MyConfig;
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -16,9 +15,9 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.activity.ComponentActivity;
+import androidx.appcompat.app.AppCompatActivity;
 
-public abstract class Form extends ComponentActivity {
+public abstract class Form extends AppCompatActivity {
 	/** Called when the activity is first created. */
 	protected LinearLayout llHeader;
 	protected LinearLayout llFooter;

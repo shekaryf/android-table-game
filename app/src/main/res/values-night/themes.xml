@@ -14,11 +14,12 @@
         <!-- Customize your theme here. -->
     </style>
 
-    <style name="Theme.BaranPack.Fullscreen" parent="@android:style/Theme.NoTitleBar.Fullscreen">
+    <style name="Theme.BaranPack.Fullscreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
         <item name="android:windowBackground">@color/launch_screen_background</item>
     </style>
 
-    <style name="Theme.BaranPack.NoTitleBar" parent="@android:style/Theme.NoTitleBar">
+    <style name="Theme.BaranPack.NoTitleBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/launch_screen_background</item>
     </style>
 </resources>
