@@ -63,6 +63,10 @@ public class GameRepository {
         void onResult(boolean value);
     }
 
+    public interface ScoreCallback {
+        void onResult(int score);
+    }
+
     public void getCurrentLevelIdAsync(final IntCallback callback) {
         ioExecutor.execute(() -> {
             UserEntity user = userDao.getUserSync();
@@ -96,6 +100,32 @@ public class GameRepository {
             if (callback != null) {
                 callback.onResult(count > 0);
             }
+        });
+    }
+
+    public void getLevelsCountAsync(final IntCallback callback) {
+        ioExecutor.execute(() -> {
+            int count = levelDao.getLevelsCount();
+            if (callback != null) {
+                callback.onResult(count);
+            }
+        });
+    }
+
+    public void getScoreAsync(final android.content.Context context, final ScoreCallback callback) {
+        ioExecutor.execute(() -> {
+            android.content.SharedPreferences sp = context.getSharedPreferences("game_prefs", android.content.Context.MODE_PRIVATE);
+            int score = sp.getInt("score", 10);
+            if (callback != null) {
+                callback.onResult(score);
+            }
+        });
+    }
+
+    public void setScoreAsync(final android.content.Context context, final int score) {
+        ioExecutor.execute(() -> {
+            android.content.SharedPreferences sp = context.getSharedPreferences("game_prefs", android.content.Context.MODE_PRIVATE);
+            sp.edit().putInt("score", score).apply();
         });
     }
 

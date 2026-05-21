@@ -32,7 +32,7 @@ public class ConfigurationUtils {
 
     public static Typeface getLabelFont(Context page) {
         if (labelFont == null)
-            labelFont = Typeface.createFromAsset(page.getAssets(), "font/font.ttf");
+            labelFont = Typeface.createFromAsset(page.getAssets(), "font/irn.ttf");
         return labelFont;
     }
 

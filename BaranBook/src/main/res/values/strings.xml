@@ -18,8 +18,8 @@
     <string name="help_font"> دکمه Font :با کليک برروي اين دکمه مي توانيد اندازه فونت را تغيير دهيد.</string>
     <string name="help_comment">شما مي توانيد با لمس طولاني صفحه ،صفحه مطالعه را بزرگ کنيد و همچنين قابليت چرخيدن صفحه همراه با چرخش گوشي را نيز دارد.  
 </string>
-    <string name="DefaultTypeface">Vazir-Light.ttf</string>
-    <string name="NextTypeface">Vazir-Light.ttf</string>
+    <string name="DefaultTypeface">font/irn.ttf</string>
+    <string name="NextTypeface">font/irn.ttf</string>
     <string name="NextMenuType"></string>
     <string name="base64Encode">MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwD2Z7mODy6GMLdA9iyzazt9hioxi2OvX3vqzoL6Sj2mjSs9N3iCYi34JgGJ6Z3RkFgbccLRgV3IuQ0w92l2TfIhnb8Za+XZcLJzuXNp+jUPtC3qlpwD2JxDG43SY6A1lxHMWfiOWMWlI/koavXuFozuOtMRzgMhOxT7vnuDh7QAyLr9B9phVnLs5RtHBHMf2rJElmTokytKQp0UfIraApO7pC+VRMSuDoUodRjQp/kCAwEAAQ==</string>
     <string name="SKU_PREMIUM">ali.bb</string>

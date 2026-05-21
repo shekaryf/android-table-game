@@ -38,9 +38,11 @@ public class GameViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> winLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<String>> validationErrorsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Integer> scoreLiveData = new MutableLiveData<>(10);
 
     private LiveData<LevelEntity> activeLevelLiveData;
     private final Observer<LevelEntity> levelObserver = this::handleLevelLoaded;
+    private boolean forceReload = false;
 
     private int activeLevelId = -1;
     private int rows = 0;
@@ -86,14 +88,23 @@ public class GameViewModel extends AndroidViewModel {
         return validationErrorsLiveData;
     }
 
+    public LiveData<Integer> getScoreLiveData() {
+        return scoreLiveData;
+    }
+
     public void validateAllLevels() {
         repository.validateAllLevelsAsync(errors -> validationErrorsLiveData.postValue(errors));
+    }
+
+    public void loadScore() {
+        repository.getScoreAsync(getApplication().getApplicationContext(), score -> scoreLiveData.postValue(score));
     }
 
     public void loadLevel(int levelId) {
         // شروع/تعویض مرحله جاری و ریست وضعیت برد
         winLiveData.setValue(false);
         clearSelection();
+        forceReload = true;
 
         if (activeLevelLiveData != null) {
             activeLevelLiveData.removeObserver(levelObserver);
@@ -131,6 +142,8 @@ public class GameViewModel extends AndroidViewModel {
         swapCells(selectedRow, selectedCol, row, col);
         clearSelection();
         updateLockedCellsByCorrectLetters();
+        int scoreDelta = scoreDeltaForCell(selectedRow, selectedCol) + scoreDeltaForCell(row, col);
+        updateScoreByDelta(scoreDelta);
         publishBoard();
 
         if (isWin()) {
@@ -148,8 +161,16 @@ public class GameViewModel extends AndroidViewModel {
             errorLiveData.postValue("Level id is null.");
             return;
         }
+
+        // اگر همان مرحله فقط به‌خاطر آپدیت دیتابیس (مثل is_completed) دوباره emit شد،
+        // جدول دوباره shuffle نشود.
+        if (!forceReload && activeLevelId == levelEntity.getId() && currentGrid != null) {
+            return;
+        }
+
         activeLevelId = levelEntity.getId();
         initializeBoardFromLevel(levelEntity);
+        forceReload = false;
     }
 
     private void initializeBoardFromLevel(LevelEntity level) {
@@ -353,6 +374,24 @@ public class GameViewModel extends AndroidViewModel {
             }
         }
         return true;
+    }
+
+    private int scoreDeltaForCell(int row, int col) {
+        if (!isInsideGrid(row, col) || blockedCells == null || blockedCells[row][col]) {
+            return 0;
+        }
+        return safeEquals(currentGrid[row][col], answerGrid[row][col]) ? 1 : -1;
+    }
+
+    private void updateScoreByDelta(int deltaScore) {
+        Integer current = scoreLiveData.getValue();
+        int score = current == null ? 10 : current;
+        score += deltaScore;
+        if (score < 0) {
+            score = 0;
+        }
+        scoreLiveData.setValue(score);
+        repository.setScoreAsync(getApplication().getApplicationContext(), score);
     }
 
     private void swapCells(int r1, int c1, int r2, int c2) {

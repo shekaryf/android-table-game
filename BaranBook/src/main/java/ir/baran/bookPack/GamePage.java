@@ -77,6 +77,8 @@ public class GamePage extends Form {
     private GridLayout gridLayout;
     private TextView tvTitle;
     private TextView tvHint;
+    private TextView tvStageInfo;
+    private TextView tvScore;
     private LinearLayout boardWrapper;
     private HorizontalScrollView horizontalScrollView;
     private ScrollView verticalScrollView;
@@ -90,7 +92,9 @@ public class GamePage extends Form {
 
     private GameBoard currentBoard;
     private int currentLevelId = -1;
+    private int levelsCount = 0;
     private int winHandledLevelId = -1;
+    private boolean allowNextFromCurrentWin = false;
 
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
@@ -100,9 +104,16 @@ public class GamePage extends Form {
 
         viewModel = new ViewModelProvider(this).get(GameViewModel.class);
         repository = new GameRepository(getApplicationContext());
-        initPalette();
         subscribeToViewModel();
         viewModel.validateAllLevels();
+        viewModel.loadScore();
+        if (tvScore != null) {
+            tvScore.setText("10");
+        }
+        repository.getLevelsCountAsync(count -> uiHandler.post(() -> {
+            levelsCount = count;
+            updateHeaderTexts();
+        }));
 
         int requestedLevel = getIntent() != null ? getIntent().getIntExtra(EXTRA_LEVEL_ID, -1) : -1;
         if (requestedLevel > 0) {
@@ -144,6 +155,19 @@ public class GamePage extends Form {
         btnNext.setEnabled(false);
         btnNext.setOnClickListener(v -> {
             int next = currentLevelId + 1;
+            if (allowNextFromCurrentWin) {
+                repository.hasLevelAsync(next, exists -> uiHandler.post(() -> {
+                    if (exists) {
+                        allowNextFromCurrentWin = false;
+                        viewModel.loadLevel(next);
+                        repository.setCurrentLevelIdAsync(next);
+                    } else {
+                        showMessage("مرحله بعدی موجود نیست.");
+                    }
+                }));
+                return;
+            }
+
             repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> {
                 if (completed) {
                     viewModel.loadLevel(next);
@@ -169,17 +193,65 @@ public class GamePage extends Form {
     @Override
     public void initContent(LinearLayout llContent) {
         MyConfig._FirstForm = this;
+        initPalette();
 
         llContent.setBackgroundColor(colorBgPage);
         llContent.setOrientation(LinearLayout.VERTICAL);
         llContent.setPadding(dp(12), dp(12), dp(12), dp(12));
         llContent.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
 
+        LinearLayout headerRow = new LinearLayout(this);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(Gravity.CENTER_VERTICAL);
+        llContent.addView(headerRow, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        LinearLayout stageWrap = new LinearLayout(this);
+        stageWrap.setOrientation(LinearLayout.HORIZONTAL);
+        stageWrap.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams stageLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        headerRow.addView(stageWrap, stageLp);
+
+        ImageView stageIcon = new ImageView(this);
+        stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
+        LinearLayout.LayoutParams stageIconLp = new LinearLayout.LayoutParams(dp(28), dp(28));
+        stageIconLp.rightMargin = dp(6);
+        stageWrap.addView(stageIcon, stageIconLp);
+
+        tvStageInfo = new TextView(this);
+        tvStageInfo.setTextColor(colorText);
+        tvStageInfo.setTypeface(ConfigurationUtils.getLabelFont(this));
+        tvStageInfo.setTextSize(17f);
+        stageWrap.addView(tvStageInfo);
+
+        LinearLayout scoreWrap = new LinearLayout(this);
+        scoreWrap.setOrientation(LinearLayout.HORIZONTAL);
+        scoreWrap.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        headerRow.addView(scoreWrap, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        ImageView scoreIcon = new ImageView(this);
+        scoreIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_heart_red);
+        LinearLayout.LayoutParams scoreIconLp = new LinearLayout.LayoutParams(dp(28), dp(28));
+        scoreIconLp.rightMargin = dp(6);
+        scoreWrap.addView(scoreIcon, scoreIconLp);
+
+        tvScore = new TextView(this);
+        tvScore.setTextColor(colorText);
+        tvScore.setTypeface(ConfigurationUtils.getLabelFont(this));
+        tvScore.setTextSize(17f);
+        tvScore.setText("10");
+        scoreWrap.addView(tvScore);
+
         tvTitle = new TextView(this);
         tvTitle.setText("انتخاب و جا به جایی");
-        tvTitle.setTextColor(colorText);
-        tvTitle.setTypeface(Typeface.DEFAULT_BOLD);
-        tvTitle.setTextSize(22f);
+        tvTitle.setTextColor(colorSubtext);
+        tvTitle.setTextSize(13f);
+        tvTitle.setPadding(0, dp(4), 0, 0);
         tvTitle.setGravity(Gravity.CENTER_HORIZONTAL);
         llContent.addView(tvTitle, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -278,6 +350,7 @@ public class GamePage extends Form {
                     return;
                 }
                 winHandledLevelId = finishedLevel;
+                allowNextFromCurrentWin = true;
                 playSoundFromAssets("applause.mp3");
                 showWinConfirmDialog(finishedLevel);
             }
@@ -295,6 +368,12 @@ public class GamePage extends Form {
             }
             showMessage("خطای داده مرحله: " + errors.get(0));
         });
+
+        viewModel.getScoreLiveData().observe(this, score -> {
+            if (tvScore != null && score != null) {
+                tvScore.setText(String.valueOf(score));
+            }
+        });
     }
 
     private void renderBoard(GameBoard board) {
@@ -306,8 +385,10 @@ public class GamePage extends Form {
             currentLevelId = board.getLevelId();
             zoomFactor = 1f;
             winHandledLevelId = -1;
+            allowNextFromCurrentWin = false;
             repository.setCurrentLevelIdAsync(currentLevelId);
             refreshFooterButtons();
+            updateHeaderTexts();
         }
 
         currentBoard = board;
@@ -322,7 +403,7 @@ public class GamePage extends Form {
         List<List<GameCell>> rows = board.getCells();
         int rowCount = rows.size();
         int colCount = rowCount > 0 ? rows.get(0).size() : 0;
-        tvTitle.setText("مرحله " + board.getLevelId());
+        tvTitle.setText("جدول واژه");
 
         Map<String, List<ClueItem>> clueMap = parseCluesByAnchor(board.getCluesDataJson());
 
@@ -413,6 +494,7 @@ public class GamePage extends Form {
             TextView tv = new TextView(this);
             tv.setTextColor(colorSubtext);
             tv.setTextSize(clueInlineFontSizeForCell(cellSize));
+            tv.setTypeface(ConfigurationUtils.getLabelFont(GamePage.this));
             tv.setSingleLine(true);
             tv.setEllipsize(TextUtils.TruncateAt.END);
             tv.setText(clue.clue);
@@ -536,33 +618,14 @@ public class GamePage extends Form {
         return direction == null ? "" : direction.trim().toLowerCase(Locale.US).replace('-', '_');
     }
 
-    private void showFullCluesDialog(List<ClueItem> cluesAtCell) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < cluesAtCell.size(); i++) {
-            ClueItem clue = cluesAtCell.get(i);
-            if (i > 0) {
-                sb.append("\n\n");
-            }
-            sb.append(clue.clue);
-            if (!TextUtils.isEmpty(clue.direction)) {
-                sb.append(" ( ").append(clue.direction).append(" )");
-            }
-        }
-
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("متن کامل راهنما")
-                .setMessage(sb.toString())
-                .setPositiveButton("بستن", null)
-                .show();
-    }
-
     private void showSingleClueDialog(ClueItem clue) {
         if (clue == null) {
             return;
         }
         StringBuilder sb = new StringBuilder(clue.clue);
-        if (!TextUtils.isEmpty(clue.direction)) {
-            sb.append(" ( ").append(clue.direction).append(" )");
+        //TODO:remove it is just for test
+        if (!TextUtils.isEmpty(clue.answer)) {
+//            sb.append(" ( ").append(clue.answer).append(" )");
         }
         new MaterialAlertDialogBuilder(this)
                 .setTitle("متن کامل راهنما")
@@ -587,7 +650,14 @@ public class GamePage extends Form {
                         }
                     }));
                 })
-                .setNegativeButton("خیر", null)
+                .setNegativeButton("خیر", (dialog, which) -> {
+                    // کاربر روی همین مرحله بماند و فقط دکمه مرحله بعد فعال شود.
+                    allowNextFromCurrentWin = true;
+                    if (btnNext != null) {
+                        btnNext.setEnabled(true);
+                        styleFooterButton(btnNext, true);
+                    }
+                })
                 .show();
     }
 
@@ -649,16 +719,14 @@ public class GamePage extends Form {
                 int col = obj.optInt("col", -1);
                 String clue = obj.optString("clue", "").trim();
                 String direction = obj.optString("direction", "").trim();
+                String answer = obj.optString("answer", "").trim();
+
                 if (row < 0 || col < 0 || clue.isEmpty()) {
                     continue;
                 }
                 String key = key(row, col);
-                List<ClueItem> list = map.get(key);
-                if (list == null) {
-                    list = new ArrayList<>();
-                    map.put(key, list);
-                }
-                list.add(new ClueItem(clue, direction));
+                List<ClueItem> list = map.computeIfAbsent(key, k -> new ArrayList<>());
+                list.add(new ClueItem(clue, direction, answer));
             }
         } catch (Exception ignored) {
         }
@@ -782,6 +850,18 @@ public class GamePage extends Form {
         return Functions.dp2px(value);
     }
 
+    private void updateHeaderTexts() {
+        if (tvStageInfo != null) {
+            if (levelsCount > 0 && currentLevelId > 0) {
+                tvStageInfo.setText("مرحله " + currentLevelId + " از " + levelsCount);
+            } else if (currentLevelId > 0) {
+                tvStageInfo.setText("مرحله " + currentLevelId);
+            } else {
+                tvStageInfo.setText("مرحله -");
+            }
+        }
+    }
+
     private String safeLetter(String letter) {
         return letter == null ? "" : letter.trim();
     }
@@ -799,7 +879,7 @@ public class GamePage extends Form {
     }
 
     private float clueInlineFontSizeForCell(int cellSizePx) {
-        return clamp(cellSizePx / 6.2f, 8f, 16f);
+        return clamp(cellSizePx / 15.2f, 3f, 16f);
     }
 
     private float clamp(float value, float min, float max) {
@@ -825,16 +905,18 @@ public class GamePage extends Form {
     }
 
     private int getColorCompat(int colorRes) {
-        return androidx.core.content.ContextCompat.getColor(this, colorRes);
+        return getColor(colorRes);
     }
 
     private static class ClueItem {
         final String clue;
         final String direction;
+        final String answer;
 
-        ClueItem(String clue, String direction) {
+        ClueItem(String clue, String direction, String answer) {
             this.clue = clue;
             this.direction = direction;
+            this.answer = answer;
         }
     }
 }
