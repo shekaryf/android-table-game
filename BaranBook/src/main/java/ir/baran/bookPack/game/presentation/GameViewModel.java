@@ -39,6 +39,8 @@ public class GameViewModel extends AndroidViewModel {
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<String>> validationErrorsLiveData = new MutableLiveData<>();
     private final MutableLiveData<Integer> scoreLiveData = new MutableLiveData<>(10);
+    private final MutableLiveData<Boolean> moveResultLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> soundEventLiveData = new MutableLiveData<>();
 
     private LiveData<LevelEntity> activeLevelLiveData;
     private final Observer<LevelEntity> levelObserver = this::handleLevelLoaded;
@@ -92,6 +94,14 @@ public class GameViewModel extends AndroidViewModel {
         return scoreLiveData;
     }
 
+    public LiveData<Boolean> getMoveResultLiveData() {
+        return moveResultLiveData;
+    }
+
+    public LiveData<String> getSoundEventLiveData() {
+        return soundEventLiveData;
+    }
+
     public void validateAllLevels() {
         repository.validateAllLevelsAsync(errors -> validationErrorsLiveData.postValue(errors));
     }
@@ -123,6 +133,7 @@ public class GameViewModel extends AndroidViewModel {
         if (selectedRow == -1) {
             selectedRow = row;
             selectedCol = col;
+            soundEventLiveData.setValue("click");
             publishBoard();
             return;
         }
@@ -139,11 +150,21 @@ public class GameViewModel extends AndroidViewModel {
             return;
         }
 
-        swapCells(selectedRow, selectedCol, row, col);
+        int firstRow = selectedRow;
+        int firstCol = selectedCol;
+        int secondRow = row;
+        int secondCol = col;
+        int beforeCorrect = countCorrectLetters();
+
+        swapCells(firstRow, firstCol, secondRow, secondCol);
         clearSelection();
         updateLockedCellsByCorrectLetters();
-        int scoreDelta = scoreDeltaForCell(selectedRow, selectedCol) + scoreDeltaForCell(row, col);
+        int afterCorrect = countCorrectLetters();
+        int scoreDelta = scoreDeltaForCell(firstRow, firstCol) + scoreDeltaForCell(secondRow, secondCol);
         updateScoreByDelta(scoreDelta);
+        boolean improved = afterCorrect > beforeCorrect;
+        moveResultLiveData.setValue(improved);
+        soundEventLiveData.setValue(improved ? "click-ok" : "click-no");
         publishBoard();
 
         if (isWin()) {
@@ -157,11 +178,6 @@ public class GameViewModel extends AndroidViewModel {
             errorLiveData.postValue("Level not found.");
             return;
         }
-        if (levelEntity.getId() == null) {
-            errorLiveData.postValue("Level id is null.");
-            return;
-        }
-
         // اگر همان مرحله فقط به‌خاطر آپدیت دیتابیس (مثل is_completed) دوباره emit شد،
         // جدول دوباره shuffle نشود.
         if (!forceReload && activeLevelId == levelEntity.getId() && currentGrid != null) {
@@ -250,7 +266,11 @@ public class GameViewModel extends AndroidViewModel {
             if ("clue".equals(type) || "hint".equals(type)) {
                 return new ParsedCell(value, false);
             }
-            return new ParsedCell(normalizeLetter(value), true);
+            String normalized = normalizeLetter(value);
+            if (isHardBlockLetter(normalized)) {
+                return new ParsedCell("", false);
+            }
+            return new ParsedCell(normalized, true);
         }
 
         String token = String.valueOf(raw).trim();
@@ -261,13 +281,21 @@ public class GameViewModel extends AndroidViewModel {
             return new ParsedCell(token.substring(CLUE_PREFIX.length()).trim(), false);
         }
         if (token.startsWith(LETTER_PREFIX)) {
-            return new ParsedCell(normalizeLetter(token.substring(LETTER_PREFIX.length())), true);
+            String letter = normalizeLetter(token.substring(LETTER_PREFIX.length()));
+            if (isHardBlockLetter(letter)) {
+                return new ParsedCell("", false);
+            }
+            return new ParsedCell(letter, true);
         }
         return new ParsedCell(normalizeLetter(token), true);
     }
 
     private String normalizeLetter(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private boolean isHardBlockLetter(String value) {
+        return "x".equalsIgnoreCase(value);
     }
 
     private static class ParsedCell {
@@ -381,6 +409,21 @@ public class GameViewModel extends AndroidViewModel {
             return 0;
         }
         return safeEquals(currentGrid[row][col], answerGrid[row][col]) ? 1 : -1;
+    }
+
+    private int countCorrectLetters() {
+        int correct = 0;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (blockedCells[r][c]) {
+                    continue;
+                }
+                if (safeEquals(currentGrid[r][c], answerGrid[r][c])) {
+                    correct++;
+                }
+            }
+        }
+        return correct;
     }
 
     private void updateScoreByDelta(int deltaScore) {

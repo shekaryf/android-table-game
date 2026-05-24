@@ -195,7 +195,7 @@ public class GamePage extends Form {
         MyConfig._FirstForm = this;
         initPalette();
 
-        llContent.setBackgroundColor(colorBgPage);
+        llContent.setBackgroundResource(ir.baran.baranBook.R.drawable.game_bg_pattern);
         llContent.setOrientation(LinearLayout.VERTICAL);
         llContent.setPadding(dp(12), dp(12), dp(12), dp(12));
         llContent.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
@@ -374,6 +374,30 @@ public class GamePage extends Form {
                 tvScore.setText(String.valueOf(score));
             }
         });
+
+        viewModel.getMoveResultLiveData().observe(this, isOk -> {
+            if (isOk == null) {
+                return;
+            }
+        });
+
+        viewModel.getSoundEventLiveData().observe(this, event -> {
+            if (TextUtils.isEmpty(event)) {
+                return;
+            }
+            switch (event) {
+                case "click":
+                    playSoundFromAssets("click.mp3");
+                    break;
+                case "click-ok":
+                    playSoundFromAssets("click-ok.mp3");
+                    break;
+                default:
+                    playSoundFromAssets("click-no.mp3");
+                    break;
+
+            }
+        });
     }
 
     private void renderBoard(GameBoard board) {
@@ -449,7 +473,6 @@ public class GamePage extends Form {
         if (cell.getState() == CellState.MOVABLE || cell.getState() == CellState.SELECTED) {
             tv.setOnClickListener(v -> {
                 runTapAnimation(v);
-                playSoundFromAssets("click.mp3");
                 viewModel.onCellTapped(cell.getRow(), cell.getCol());
             });
         }
@@ -625,7 +648,7 @@ public class GamePage extends Form {
         StringBuilder sb = new StringBuilder(clue.clue);
         //TODO:remove it is just for test
         if (!TextUtils.isEmpty(clue.answer)) {
-//            sb.append(" ( ").append(clue.answer).append(" )");
+            sb.append(" ( ").append(clue.answer).append(" )");
         }
         new MaterialAlertDialogBuilder(this)
                 .setTitle("متن کامل راهنما")
@@ -635,30 +658,33 @@ public class GamePage extends Form {
     }
 
     private void showWinConfirmDialog(int finishedLevel) {
-        int nextLevel = finishedLevel + 1;
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("تبریک")
-                .setMessage("مرحله " + finishedLevel + " کامل شد. ورود به مرحله " + nextLevel + "؟")
-                .setPositiveButton("بله", (dialog, which) -> {
-                    repository.hasLevelAsync(nextLevel, exists -> uiHandler.post(() -> {
-                        if (exists) {
-                            viewModel.loadLevel(nextLevel);
-                            repository.setCurrentLevelIdAsync(nextLevel);
-                            showMessage("مرحله " + nextLevel + " شروع شد.");
-                        } else {
-                            showMessage("مرحله بعدی موجود نیست.");
-                        }
-                    }));
-                })
-                .setNegativeButton("خیر", (dialog, which) -> {
-                    // کاربر روی همین مرحله بماند و فقط دکمه مرحله بعد فعال شود.
-                    allowNextFromCurrentWin = true;
-                    if (btnNext != null) {
-                        btnNext.setEnabled(true);
-                        styleFooterButton(btnNext, true);
-                    }
-                })
-                .show();
+
+//        int nextLevel = finishedLevel + 1;
+//        new MaterialAlertDialogBuilder(this)
+//                .setTitle("تبریک")
+//                .setMessage("مرحله " + finishedLevel + " کامل شد. ورود به مرحله " + nextLevel + "؟")
+//                .setPositiveButton("بله", (dialog, which) -> {
+//                    repository.hasLevelAsync(nextLevel, exists -> uiHandler.post(() -> {
+//                        if (exists) {
+//                            viewModel.loadLevel(nextLevel);
+//                            repository.setCurrentLevelIdAsync(nextLevel);
+//                            showMessage("مرحله " + nextLevel + " شروع شد.");
+//                        } else {
+//                            showMessage("مرحله بعدی موجود نیست.");
+//                        }
+//                    }));
+//                })
+//                .setNegativeButton("خیر", (dialog, which) -> {
+//                    // کاربر روی همین مرحله بماند و فقط دکمه مرحله بعد فعال شود.
+//                })
+//                .show();
+        showMessage("تبریک! " + "مرحله " + finishedLevel + " کامل شد. ورود به مرحله ");
+        allowNextFromCurrentWin = true;
+        if (btnNext != null) {
+            btnNext.setEnabled(true);
+            styleFooterButton(btnNext, true);
+        }
+
     }
 
     private void refreshFooterButtons() {
@@ -745,15 +771,10 @@ public class GamePage extends Form {
             case "left":
                 fileName = "left.png";
                 break;
-            case "right":
-                fileName = "right.png";
-                break;
-            case "up":
-                fileName = "up.png";
-                break;
             case "down":
                 fileName = "down.png";
                 break;
+            case "up":
             case "up_left":
             case "left_up":
                 fileName = "up_left.png";
@@ -766,9 +787,10 @@ public class GamePage extends Form {
             case "left_down":
                 fileName = "down_left.png";
                 break;
+            case "right":
             case "down_right":
             case "right_down":
-                fileName = "down_right.png";
+                fileName = "right_down.png";
                 break;
             default:
                 return null;

@@ -3,11 +3,11 @@ package ir.baran.bookPack.game.data.model;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
-import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
 @Entity(
         tableName = "Levels",
+        primaryKeys = {"id", "level_number"},
         foreignKeys = @ForeignKey(
                 entity = CategoryEntity.class,
                 parentColumns = "id",
@@ -19,9 +19,8 @@ import androidx.annotation.NonNull;
  */
 public class LevelEntity {
 
-    @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    private Integer id;
+    private int id;
 
     @ColumnInfo(name = "category_id")
     private Integer categoryId;
@@ -50,11 +49,11 @@ public class LevelEntity {
     @ColumnInfo(name = "stars", defaultValue = "0")
     private Integer stars;
 
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(int id) {
         this.id = id;
     }
 
