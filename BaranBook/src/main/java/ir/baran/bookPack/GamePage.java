@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import androidx.appcompat.app.AlertDialog;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,6 +55,10 @@ import ir.baran.framework.utilities.MyConfig;
 public class GamePage extends Form {
 
     public static final String EXTRA_LEVEL_ID = "level_id";
+    private static final String SCORE_PREFS_NAME = "game_prefs";
+    private static final String KEY_SCORE_ZERO_AT = "score_zero_at_ms";
+    private static final long FREE_SCORE_INTERVAL_MS = 60L * 60L * 1000L;
+    private static final int FREE_SCORE_AMOUNT = 5;
 
     private int colorBgPage;
     private int colorCellMovable;
@@ -95,6 +100,13 @@ public class GamePage extends Form {
     private int levelsCount = 0;
     private int winHandledLevelId = -1;
     private boolean allowNextFromCurrentWin = false;
+    private boolean isScoreLocked = false;
+    private boolean isScorePurchaseDialogShowing = false;
+    private boolean isScorePurchaseInProgress = false;
+    private AlertDialog scorePurchaseDialog;
+
+    private BazaarPay bazaarPay;
+    private final List<BazaarPay.ScorePackPlan> scorePackPlans = new ArrayList<>();
 
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
@@ -104,6 +116,9 @@ public class GamePage extends Form {
 
         viewModel = new ViewModelProvider(this).get(GameViewModel.class);
         repository = new GameRepository(getApplicationContext());
+        bazaarPay = BazaarPay.getInstance(this);
+        bazaarPay.init();
+        initScorePlans();
         subscribeToViewModel();
         viewModel.validateAllLevels();
         viewModel.loadScore();
@@ -373,12 +388,18 @@ public class GamePage extends Form {
             if (tvScore != null && score != null) {
                 tvScore.setText(String.valueOf(score));
             }
+            int currentScore = score == null ? 10 : score;
+            boolean granted = handleFreeScoreRecoveryIfNeeded(currentScore);
+            if (!granted) {
+                handleScoreLock(currentScore);
+            }
         });
 
         viewModel.getMoveResultLiveData().observe(this, isOk -> {
             if (isOk == null) {
                 return;
             }
+            handleScoreLock(viewModel.getCurrentScore());
         });
 
         viewModel.getSoundEventLiveData().observe(this, event -> {
@@ -472,6 +493,10 @@ public class GamePage extends Form {
 
         if (cell.getState() == CellState.MOVABLE || cell.getState() == CellState.SELECTED) {
             tv.setOnClickListener(v -> {
+                if (isScoreLocked) {
+                    showScorePurchaseDialogIfNeeded();
+                    return;
+                }
                 runTapAnimation(v);
                 viewModel.onCellTapped(cell.getRow(), cell.getCol());
             });
@@ -648,7 +673,7 @@ public class GamePage extends Form {
         StringBuilder sb = new StringBuilder(clue.clue);
         //TODO:remove it is just for test
         if (!TextUtils.isEmpty(clue.answer)) {
-            sb.append(" ( ").append(clue.answer).append(" )");
+//            sb.append(" ( ").append(clue.answer).append(" )");
         }
         new MaterialAlertDialogBuilder(this)
                 .setTitle("متن کامل راهنما")
@@ -689,12 +714,17 @@ public class GamePage extends Form {
 
     private void refreshFooterButtons() {
         if (btnPrev != null) {
-            boolean enabledPrev = currentLevelId > 1;
+            boolean enabledPrev = currentLevelId > 1 && !isScoreLocked;
             btnPrev.setEnabled(enabledPrev);
             styleFooterButton(btnPrev, enabledPrev);
         }
 
         if (btnNext != null && currentLevelId > 0) {
+            if (isScoreLocked) {
+                btnNext.setEnabled(false);
+                styleFooterButton(btnNext, false);
+                return;
+            }
             int next = currentLevelId + 1;
             repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> {
                 btnNext.setEnabled(completed);
@@ -930,6 +960,143 @@ public class GamePage extends Form {
         return getColor(colorRes);
     }
 
+    private void initScorePlans() {
+        scorePackPlans.clear();
+        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_100", 100, 1000));
+        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_150", 150, 1200));
+        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_350", 350, 2000));
+    }
+
+    private void handleScoreLock(int score) {
+        boolean shouldLock = score <= 0;
+        if (isScoreLocked == shouldLock && !(shouldLock && !isScorePurchaseDialogShowing)) {
+            return;
+        }
+        isScoreLocked = shouldLock;
+        refreshFooterButtons();
+        if (isScoreLocked) {
+            showScorePurchaseDialogIfNeeded();
+        }
+    }
+
+    private void showScorePurchaseDialogIfNeeded() {
+        if (!isScoreLocked || isFinishing() || isScorePurchaseDialogShowing) {
+            return;
+        }
+        if (scorePackPlans.isEmpty()) {
+            initScorePlans();
+        }
+        if (scorePurchaseDialog != null && scorePurchaseDialog.isShowing()) {
+            return;
+        }
+        isScorePurchaseDialogShowing = true;
+        LinearLayout plansContainer = new LinearLayout(this);
+        plansContainer.setOrientation(LinearLayout.VERTICAL);
+        plansContainer.setPadding(dp(8), dp(8), dp(8), dp(8));
+
+        for (BazaarPay.ScorePackPlan plan : scorePackPlans) {
+            TextView planView = new TextView(this);
+            planView.setText(plan.title);
+            planView.setTextSize(16f);
+            planView.setTextColor(colorText);
+            planView.setPadding(dp(14), dp(12), dp(14), dp(12));
+            planView.setBackground(createMiniClueBoxBackground(true, 1));
+            LinearLayout.LayoutParams planLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            planLp.bottomMargin = dp(8);
+            planView.setLayoutParams(planLp);
+            planView.setOnClickListener(v -> startScorePurchase(plan));
+            plansContainer.addView(planView);
+        }
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
+                .setTitle("امتیاز شما تمام شد")
+                .setMessage("برای ادامه بازی یکی از بسته‌های امتیاز را خریداری کنید.\n\nطرح بازیابی امتیاز: اگر امتیاز شما ۰ باشد و بعد از ۶۰ دقیقه بازی را باز کنید، ۵ امتیاز رایگان دریافت می‌کنید.")
+                .setCancelable(false)
+                .setView(plansContainer);
+
+        scorePurchaseDialog = builder.create();
+        scorePurchaseDialog.setCanceledOnTouchOutside(false);
+        scorePurchaseDialog.show();
+    }
+
+    private void startScorePurchase(BazaarPay.ScorePackPlan selectedPlan) {
+        if (selectedPlan == null || bazaarPay == null) {
+            return;
+        }
+        isScorePurchaseInProgress = true;
+        bazaarPay.purchaseScorePlan(selectedPlan, new BazaarPay.ScorePurchaseListener() {
+            @Override
+            public void onScorePurchaseSuccess(BazaarPay.ScorePackPlan plan) {
+                runOnUiThread(() -> {
+                    isScorePurchaseInProgress = false;
+                    clearScoreZeroTimestamp();
+                    viewModel.addScore(plan.scoreAmount);
+                    showMessage(plan.scoreAmount + " امتیاز به حساب شما اضافه شد.");
+                    isScorePurchaseDialogShowing = false;
+                    if (scorePurchaseDialog != null) {
+                        scorePurchaseDialog.dismiss();
+                    }
+                });
+            }
+
+            @Override
+            public void onScorePurchaseCancelled() {
+                runOnUiThread(() -> {
+                    isScorePurchaseInProgress = false;
+                    showMessage("خرید لغو شد.");
+                    isScorePurchaseDialogShowing = false;
+                    showScorePurchaseDialogIfNeeded();
+                });
+            }
+
+            @Override
+            public void onScorePurchaseFailed(String message) {
+                runOnUiThread(() -> {
+                    isScorePurchaseInProgress = false;
+                    showMessage(message);
+                    isScorePurchaseDialogShowing = false;
+                    showScorePurchaseDialogIfNeeded();
+                });
+            }
+        });
+    }
+
+    private boolean handleFreeScoreRecoveryIfNeeded(int score) {
+        if (score > 0) {
+            clearScoreZeroTimestamp();
+            return false;
+        }
+
+        long now = System.currentTimeMillis();
+        long zeroAt = getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getLong(KEY_SCORE_ZERO_AT, 0L);
+        if (zeroAt <= 0L) {
+            getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putLong(KEY_SCORE_ZERO_AT, now)
+                    .apply();
+            return false;
+        }
+
+        if ((now - zeroAt) >= FREE_SCORE_INTERVAL_MS) {
+            clearScoreZeroTimestamp();
+            viewModel.addScore(FREE_SCORE_AMOUNT);
+            showMessage(FREE_SCORE_AMOUNT + " امتیاز رایگان به شما اضافه شد.");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void clearScoreZeroTimestamp() {
+        getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE)
+                .edit()
+                .remove(KEY_SCORE_ZERO_AT)
+                .apply();
+    }
+
     private static class ClueItem {
         final String clue;
         final String direction;
@@ -940,5 +1107,23 @@ public class GamePage extends Form {
             this.direction = direction;
             this.answer = answer;
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (scorePurchaseDialog != null) {
+            scorePurchaseDialog.dismiss();
+            scorePurchaseDialog = null;
+        }
+        if (bazaarPay != null) {
+            bazaarPay.onDistroy();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        handleScoreLock(viewModel.getCurrentScore());
     }
 }

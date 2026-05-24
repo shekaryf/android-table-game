@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
+import androidx.annotation.NonNull;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -25,6 +26,7 @@ import ir.cafebazaar.poolakey.config.SecurityCheck;
 import ir.cafebazaar.poolakey.request.PurchaseRequest;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import kotlin.Unit;
@@ -35,6 +37,7 @@ public class BazaarPay {
 	private static final String STR_ACTIVED = "ACTIVED";
 	private static final String STR_EXTRA_OPENED = "EXTRA_OPENED";
 	private static final String PAYLOAD = "baranpack-premium";
+	private static final String PAYLOAD_SCORE = "baranpack-score";
 
 	private static final String[] _ARR_MESSAGES = {"",
 			"", "کاربر عملیات را متوقف کرده است", "API برای درخواست ارسال شده پشتیبانی نمی شود",
@@ -43,6 +46,8 @@ public class BazaarPay {
 			"این خرید متعلق به کاربر فعلی نیست"};
 
 	private static String SKU_PREMIUM;
+	private List<ScorePackPlan> scorePlans = new ArrayList<>();
+	private ScorePurchaseListener scorePurchaseListener;
 
 	private ComponentActivity _activity;
 	private Dialog _OpenedDialog;
@@ -218,6 +223,74 @@ public class BazaarPay {
 			});
 			purchaseCallback.purchaseFailed(throwable -> {
 				ConfigurationUtils.showMessage("پرداخت ناموفق", _activity);
+				return Unit.INSTANCE;
+			});
+			return Unit.INSTANCE;
+		});
+	}
+
+	public static class ScorePackPlan {
+		public final String sku;
+		public final int scoreAmount;
+		public final int priceToman;
+		public final String title;
+
+		public ScorePackPlan(@NonNull String sku, int scoreAmount, int priceToman) {
+			this.sku = sku;
+			this.scoreAmount = scoreAmount;
+			this.priceToman = priceToman;
+			this.title = scoreAmount + " امتیاز (" + priceToman + " تومان)";
+		}
+	}
+
+	public interface ScorePurchaseListener {
+		void onScorePurchaseSuccess(@NonNull ScorePackPlan plan);
+		void onScorePurchaseCancelled();
+		void onScorePurchaseFailed(@NonNull String message);
+	}
+
+	public void purchaseScorePlan(@NonNull ScorePackPlan plan, @NonNull ScorePurchaseListener listener) {
+		scorePurchaseListener = listener;
+		purchaseProductBySku(plan);
+	}
+
+	private void purchaseProductBySku(@NonNull ScorePackPlan plan) {
+		if (_activity == null) {
+			return;
+		}
+		if (!isBillingReady || payment == null) {
+			createPay();
+			if (scorePurchaseListener != null) {
+				scorePurchaseListener.onScorePurchaseFailed("در حال اتصال به بازار هستیم. لطفا چند لحظه بعد دوباره تلاش کنید");
+			}
+			return;
+		}
+
+		PurchaseRequest purchaseRequest = new PurchaseRequest(plan.sku, PAYLOAD_SCORE + ":" + plan.scoreAmount, null);
+		payment.purchaseProduct(_activity.getActivityResultRegistry(), purchaseRequest, purchaseCallback -> {
+			purchaseCallback.purchaseFlowBegan(() -> Unit.INSTANCE);
+			purchaseCallback.failedToBeginFlow(throwable -> {
+				if (scorePurchaseListener != null) {
+					scorePurchaseListener.onScorePurchaseFailed("شروع فرآیند پرداخت ممکن نشد");
+				}
+				return Unit.INSTANCE;
+			});
+			purchaseCallback.purchaseSucceed(purchaseEntity -> {
+				if (scorePurchaseListener != null) {
+					scorePurchaseListener.onScorePurchaseSuccess(plan);
+				}
+				return Unit.INSTANCE;
+			});
+			purchaseCallback.purchaseCanceled(() -> {
+				if (scorePurchaseListener != null) {
+					scorePurchaseListener.onScorePurchaseCancelled();
+				}
+				return Unit.INSTANCE;
+			});
+			purchaseCallback.purchaseFailed(throwable -> {
+				if (scorePurchaseListener != null) {
+					scorePurchaseListener.onScorePurchaseFailed("پرداخت ناموفق");
+				}
 				return Unit.INSTANCE;
 			});
 			return Unit.INSTANCE;

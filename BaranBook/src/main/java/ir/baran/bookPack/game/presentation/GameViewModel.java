@@ -94,6 +94,18 @@ public class GameViewModel extends AndroidViewModel {
         return scoreLiveData;
     }
 
+    public int getCurrentScore() {
+        Integer current = scoreLiveData.getValue();
+        return current == null ? 10 : current;
+    }
+
+    public void addScore(int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        updateScoreByDelta(amount);
+    }
+
     public LiveData<Boolean> getMoveResultLiveData() {
         return moveResultLiveData;
     }
@@ -160,9 +172,8 @@ public class GameViewModel extends AndroidViewModel {
         clearSelection();
         updateLockedCellsByCorrectLetters();
         int afterCorrect = countCorrectLetters();
-        int scoreDelta = scoreDeltaForCell(firstRow, firstCol) + scoreDeltaForCell(secondRow, secondCol);
-        updateScoreByDelta(scoreDelta);
         boolean improved = afterCorrect > beforeCorrect;
+        updateScoreByDelta(improved ? 1 : -1);
         moveResultLiveData.setValue(improved);
         soundEventLiveData.setValue(improved ? "click-ok" : "click-no");
         publishBoard();
@@ -402,13 +413,6 @@ public class GameViewModel extends AndroidViewModel {
             }
         }
         return true;
-    }
-
-    private int scoreDeltaForCell(int row, int col) {
-        if (!isInsideGrid(row, col) || blockedCells == null || blockedCells[row][col]) {
-            return 0;
-        }
-        return safeEquals(currentGrid[row][col], answerGrid[row][col]) ? 1 : -1;
     }
 
     private int countCorrectLetters() {
