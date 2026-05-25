@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import ir.baran.baranBook.R;
 import ir.baran.bookPack.game.data.repository.GameRepository;
 import ir.baran.bookPack.game.domain.model.CellState;
 import ir.baran.bookPack.game.domain.model.GameBoard;
@@ -231,10 +232,9 @@ public class GamePage extends Form {
         tvScore.setTypeface(ConfigurationUtils.getLabelFont(this));
         tvScore.setText("10");
         stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
-        scoreIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_heart_red);
+        scoreIcon.setImageResource(R.drawable.ic_coin_gold);
 
         btnHelp.setCornerRadius(dp(10));
-        btnHelp.setIconResource(android.R.drawable.ic_menu_help);
         btnHelp.setIconPadding(dp(4));
         btnHelp.setInsetTop(0);
         btnHelp.setInsetBottom(0);

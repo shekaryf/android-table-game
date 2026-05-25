@@ -40,7 +40,7 @@
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginEnd="6dp"
-            android:src="@drawable/ic_heart_red" />
+            android:src="@drawable/ic_coin_gold" />
 
         <TextView
             android:id="@+id/tvScore"
@@ -52,10 +52,11 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnHelp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_width="48dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="4dp"
+        app:iconTint="@color/DefaultHighlightTextColor"
+        app:icon="@drawable/baseline_help_outline_24"
         android:background="@color/transparent" />
 
 </LinearLayout>
-
