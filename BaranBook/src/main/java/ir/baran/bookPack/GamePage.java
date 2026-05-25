@@ -15,6 +15,8 @@ import android.view.LayoutInflater;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.HorizontalScrollView;
@@ -84,6 +86,7 @@ public class GamePage extends Form {
     private GridLayout gridLayout;
     private TextView tvStageInfo;
     private TextView tvScore;
+    private ImageView ivScoreIcon;
     private LinearLayout boardWrapper;
     private HorizontalScrollView horizontalScrollView;
     private ScrollView verticalScrollView;
@@ -105,6 +108,9 @@ public class GamePage extends Form {
     private boolean isScorePurchaseDialogShowing = false;
     private boolean isScorePurchaseInProgress = false;
     private AlertDialog scorePurchaseDialog;
+    private View lastTappedCellView;
+    private int lastTappedRow = -1;
+    private int lastTappedCol = -1;
 
     private BazaarPay bazaarPay;
     private final List<BazaarPay.ScorePackPlan> scorePackPlans = new ArrayList<>();
@@ -224,7 +230,7 @@ public class GamePage extends Form {
         tvScore = headerView.findViewById(ir.baran.baranBook.R.id.tvScore);
         btnHelp = headerView.findViewById(ir.baran.baranBook.R.id.btnHelp);
         ImageView stageIcon = headerView.findViewById(ir.baran.baranBook.R.id.stageIcon);
-        ImageView scoreIcon = headerView.findViewById(ir.baran.baranBook.R.id.scoreIcon);
+        ivScoreIcon = headerView.findViewById(ir.baran.baranBook.R.id.scoreIcon);
 
         tvStageInfo.setTextColor(colorText);
         tvStageInfo.setTypeface(ConfigurationUtils.getLabelFont(this));
@@ -232,7 +238,7 @@ public class GamePage extends Form {
         tvScore.setTypeface(ConfigurationUtils.getLabelFont(this));
         tvScore.setText("10");
         stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
-        scoreIcon.setImageResource(R.drawable.ic_coin_gold);
+        ivScoreIcon.setImageResource(R.drawable.ic_coin_gold);
 
         btnHelp.setCornerRadius(dp(10));
         btnHelp.setIconPadding(dp(4));
@@ -359,6 +365,11 @@ public class GamePage extends Form {
             if (isOk == null) {
                 return;
             }
+            if (isOk) {
+                runCoinRewardAnimation();
+            } else {
+                uiHandler.post(() -> runWrongTapCrashAnimation(findCurrentCellView(lastTappedRow, lastTappedCol)));
+            }
             handleScoreLock(viewModel.getCurrentScore());
         });
 
@@ -455,6 +466,9 @@ public class GamePage extends Form {
                     showScorePurchaseDialogIfNeeded();
                     return;
                 }
+                lastTappedCellView = v;
+                lastTappedRow = cell.getRow();
+                lastTappedCol = cell.getCol();
                 runTapAnimation(v);
                 viewModel.onCellTapped(cell.getRow(), cell.getCol());
             });
@@ -810,6 +824,43 @@ public class GamePage extends Form {
                 .setDuration(70)
                 .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(90).start())
                 .start();
+    }
+
+    private void runCoinRewardAnimation() {
+        if (ivScoreIcon == null) {
+            return;
+        }
+        ivScoreIcon.clearAnimation();
+        Animation anim = AnimationUtils.loadAnimation(this, R.anim.coin_reward);
+        ivScoreIcon.startAnimation(anim);
+    }
+
+    private void runWrongTapCrashAnimation(View v) {
+        if (v == null) {
+            return;
+        }
+        v.clearAnimation();
+        Animation anim = AnimationUtils.loadAnimation(this, R.anim.wrong_tap_crash);
+        v.startAnimation(anim);
+    }
+
+    private View findCurrentCellView(int row, int col) {
+        if (gridLayout == null || currentBoard == null || currentBoard.getCells() == null) {
+            return null;
+        }
+        List<List<GameCell>> rows = currentBoard.getCells();
+        if (row < 0 || row >= rows.size()) {
+            return null;
+        }
+        int colCount = rows.get(0).size();
+        if (col < 0 || col >= colCount) {
+            return null;
+        }
+        int index = row * colCount + col;
+        if (index < 0 || index >= gridLayout.getChildCount()) {
+            return null;
+        }
+        return gridLayout.getChildAt(index);
     }
 
     private GradientDrawable createCellBackground(CellState state) {
