@@ -3,12 +3,13 @@
     android:id="@+id/rlMain"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/pagebgcolors" >
+    android:background="@drawable/game_bg_pattern" >
 
     <LinearLayout
         android:id="@+id/llHeader"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:background="@color/trans_bg"
         android:orientation="vertical" >
     </LinearLayout>
 
@@ -27,6 +28,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:background="@color/trans_bg"
         android:orientation="vertical" >
     </LinearLayout>
 

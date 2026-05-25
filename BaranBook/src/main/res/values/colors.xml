@@ -11,9 +11,9 @@
     <color name="DefaultTextColor">#ff000000</color>
     <color name="DefaultHighlightTextColor">#ff990101</color>
     <color name="DefaultHighlightBackColor">#ff8c98f1</color>
-    <color name="NextGradiantStart">#ffbfb5b5</color>
-    <color name="NextGradiantCenter">#fffff9f9</color>
-    <color name="NextGradiantEnd">#ffffffff</color>
+    <color name="NextGradiantStart">#FFE8FBD5</color>
+    <color name="NextGradiantCenter">#FFC9F3C1</color>
+    <color name="NextGradiantEnd">#FFB0EFAE</color>
     <color name="NextPressGradiantStart">#ff9d9393</color>
     <color name="NextPressGradiantCenter">#ffddd7d7</color>
     <color name="NextPressGradiantEnd">#ffdddddd</color>

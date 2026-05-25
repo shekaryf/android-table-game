@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
@@ -80,8 +81,6 @@ public class GamePage extends Form {
     private GameRepository repository;
 
     private GridLayout gridLayout;
-    private TextView tvTitle;
-    private TextView tvHint;
     private TextView tvStageInfo;
     private TextView tvScore;
     private LinearLayout boardWrapper;
@@ -90,6 +89,7 @@ public class GamePage extends Form {
 
     private MaterialButton btnPrev;
     private MaterialButton btnNext;
+    private MaterialButton btnHelp;
 
     private float zoomFactor = 1f;
     private ScaleGestureDetector scaleDetector;
@@ -210,78 +210,38 @@ public class GamePage extends Form {
         MyConfig._FirstForm = this;
         initPalette();
 
-        llContent.setBackgroundResource(ir.baran.baranBook.R.drawable.game_bg_pattern);
         llContent.setOrientation(LinearLayout.VERTICAL);
         llContent.setPadding(dp(12), dp(12), dp(12), dp(12));
         llContent.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
 
-        LinearLayout headerRow = new LinearLayout(this);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        llContent.addView(headerRow, new LinearLayout.LayoutParams(
+        View headerView = LayoutInflater.from(this).inflate(ir.baran.baranBook.R.layout.game_page_header, llContent, false);
+        llHeader.addView(headerView, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         ));
+        tvStageInfo = headerView.findViewById(ir.baran.baranBook.R.id.tvStageInfo);
+        tvScore = headerView.findViewById(ir.baran.baranBook.R.id.tvScore);
+        btnHelp = headerView.findViewById(ir.baran.baranBook.R.id.btnHelp);
+        ImageView stageIcon = headerView.findViewById(ir.baran.baranBook.R.id.stageIcon);
+        ImageView scoreIcon = headerView.findViewById(ir.baran.baranBook.R.id.scoreIcon);
 
-        LinearLayout stageWrap = new LinearLayout(this);
-        stageWrap.setOrientation(LinearLayout.HORIZONTAL);
-        stageWrap.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout.LayoutParams stageLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        headerRow.addView(stageWrap, stageLp);
-
-        ImageView stageIcon = new ImageView(this);
-        stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
-        LinearLayout.LayoutParams stageIconLp = new LinearLayout.LayoutParams(dp(28), dp(28));
-        stageIconLp.rightMargin = dp(6);
-        stageWrap.addView(stageIcon, stageIconLp);
-
-        tvStageInfo = new TextView(this);
         tvStageInfo.setTextColor(colorText);
         tvStageInfo.setTypeface(ConfigurationUtils.getLabelFont(this));
-        tvStageInfo.setTextSize(17f);
-        stageWrap.addView(tvStageInfo);
-
-        LinearLayout scoreWrap = new LinearLayout(this);
-        scoreWrap.setOrientation(LinearLayout.HORIZONTAL);
-        scoreWrap.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
-        headerRow.addView(scoreWrap, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
-
-        ImageView scoreIcon = new ImageView(this);
-        scoreIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_heart_red);
-        LinearLayout.LayoutParams scoreIconLp = new LinearLayout.LayoutParams(dp(28), dp(28));
-        scoreIconLp.rightMargin = dp(6);
-        scoreWrap.addView(scoreIcon, scoreIconLp);
-
-        tvScore = new TextView(this);
         tvScore.setTextColor(colorText);
         tvScore.setTypeface(ConfigurationUtils.getLabelFont(this));
-        tvScore.setTextSize(17f);
         tvScore.setText("10");
-        scoreWrap.addView(tvScore);
+        stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
+        scoreIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_heart_red);
 
-        tvTitle = new TextView(this);
-        tvTitle.setText("انتخاب و جا به جایی");
-        tvTitle.setTextColor(colorSubtext);
-        tvTitle.setTextSize(13f);
-        tvTitle.setPadding(0, dp(4), 0, 0);
-        tvTitle.setGravity(Gravity.CENTER_HORIZONTAL);
-        llContent.addView(tvTitle, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
-
-        tvHint = new TextView(this);
-        tvHint.setText("دو حرف را انتخاب کن تا جابه‌جا شوند. بزرگنمایی با دو انگشت فعال است.");
-        tvHint.setTextColor(colorSubtext);
-        tvHint.setTextSize(14f);
-        tvHint.setGravity(Gravity.CENTER_HORIZONTAL);
-        tvHint.setPadding(0, dp(4), 0, dp(10));
-        llContent.addView(tvHint, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+        btnHelp.setCornerRadius(dp(10));
+        btnHelp.setIconResource(android.R.drawable.ic_menu_help);
+        btnHelp.setIconPadding(dp(4));
+        btnHelp.setInsetTop(0);
+        btnHelp.setInsetBottom(0);
+        btnHelp.setOnClickListener(v -> Help.showGameHelpDialog(
+                GamePage.this,
+                getString(ir.baran.baranBook.R.string.game_title_text),
+                getString(ir.baran.baranBook.R.string.game_hint_text)
         ));
 
         horizontalScrollView = new HorizontalScrollView(this);
@@ -448,8 +408,6 @@ public class GamePage extends Form {
         List<List<GameCell>> rows = board.getCells();
         int rowCount = rows.size();
         int colCount = rowCount > 0 ? rows.get(0).size() : 0;
-        tvTitle.setText("جدول واژه");
-
         Map<String, List<ClueItem>> clueMap = parseCluesByAnchor(board.getCluesDataJson());
 
         gridLayout.removeAllViews();

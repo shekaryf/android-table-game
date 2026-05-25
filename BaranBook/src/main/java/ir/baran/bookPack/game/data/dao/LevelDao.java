@@ -34,4 +34,7 @@ public interface LevelDao {
 
     @Query("SELECT COUNT(*) FROM Levels")
     int getLevelsCount();
+
+    @Query("SELECT COALESCE(MAX(level_number), 1) FROM Levels")
+    int getMaxLevelNumber();
 }

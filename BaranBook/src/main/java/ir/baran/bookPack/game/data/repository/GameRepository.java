@@ -112,6 +112,15 @@ public class GameRepository {
         });
     }
 
+    public void getMaxLevelNumberAsync(final IntCallback callback) {
+        ioExecutor.execute(() -> {
+            int maxLevelNumber = levelDao.getMaxLevelNumber();
+            if (callback != null) {
+                callback.onResult(maxLevelNumber);
+            }
+        });
+    }
+
     public void getScoreAsync(final android.content.Context context, final ScoreCallback callback) {
         ioExecutor.execute(() -> {
             android.content.SharedPreferences sp = context.getSharedPreferences("game_prefs", android.content.Context.MODE_PRIVATE);

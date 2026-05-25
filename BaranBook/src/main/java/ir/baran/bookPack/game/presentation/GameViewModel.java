@@ -1,6 +1,8 @@
 package ir.baran.bookPack.game.presentation;
 
 import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -34,6 +36,7 @@ public class GameViewModel extends AndroidViewModel {
     private static final String LETTER_PREFIX = "L:";
 
     private final GameRepository repository;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final MutableLiveData<GameBoard> boardLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> winLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
@@ -173,7 +176,18 @@ public class GameViewModel extends AndroidViewModel {
         updateLockedCellsByCorrectLetters();
         int afterCorrect = countCorrectLetters();
         boolean improved = afterCorrect > beforeCorrect;
-        updateScoreByDelta(improved ? 1 : -1);
+        if (improved) {
+            // افزایش امتیاز فقط روی مرحله فعال بازیکن (جایی که مرحله بعد آزاد نشده) انجام می‌شود.
+            int nextLevel = activeLevelId + 1;
+            repository.isLevelCompletedAsync(nextLevel, isNextCompleted -> {
+                if (!isNextCompleted) {
+                    updateScoreByDeltaOnMainThread(1);
+                }
+            });
+        } else {
+            // کلیک اشتباه همیشه ۵ امتیاز کم می‌کند
+            updateScoreByDelta(-5);
+        }
         moveResultLiveData.setValue(improved);
         soundEventLiveData.setValue(improved ? "click-ok" : "click-no");
         publishBoard();
@@ -439,6 +453,14 @@ public class GameViewModel extends AndroidViewModel {
         }
         scoreLiveData.setValue(score);
         repository.setScoreAsync(getApplication().getApplicationContext(), score);
+    }
+
+    private void updateScoreByDeltaOnMainThread(int deltaScore) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            updateScoreByDelta(deltaScore);
+            return;
+        }
+        mainHandler.post(() -> updateScoreByDelta(deltaScore));
     }
 
     private void swapCells(int r1, int c1, int r2, int c2) {

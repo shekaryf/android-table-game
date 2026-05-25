@@ -34,6 +34,11 @@
     <string name="story_list_new_subtitle">يک بخش را انتخاب کن تا محتوای آن با نمايش بهتر باز شود.</string>
     <string name="story_list_new_search_hint">جستجو در عنوان بخش ها...</string>
     <string name="story_list_new_meta">براي نمايش لمس کن</string>
+    <string name="game_title_text">انتخاب و جا به جایی</string>
+    <string name="game_hint_text">دو حرف را انتخاب کن تا جابه‌جا شوند. بزرگنمایی با دو انگشت فعال است.</string>
+    <string name="game_help_button">راهنما</string>
+    <string name="game_help_dialog_title">راهنمای بازی</string>
+    <string name="game_help_dialog_close">بستن</string>
 
     <!-- Search Page Strings -->
     <string name="search_page_title">جستجو</string>
