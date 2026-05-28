@@ -51,12 +51,21 @@
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLeaderboard"
+        android:layout_width="48dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="4dp"
+        android:background="@color/transparent"
+        app:icon="@drawable/ic_leaderboard"
+        app:iconTint="@color/DefaultHighlightTextColor" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnHelp"
         android:layout_width="48dp"
         android:layout_height="28dp"
         android:layout_marginStart="4dp"
-        app:iconTint="@color/DefaultHighlightTextColor"
+        android:background="@color/transparent"
         app:icon="@drawable/baseline_help_outline_24"
-        android:background="@color/transparent" />
+        app:iconTint="@color/DefaultHighlightTextColor" />
 
 </LinearLayout>

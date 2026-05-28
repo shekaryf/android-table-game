@@ -177,12 +177,19 @@ public class GameViewModel extends AndroidViewModel {
         int afterCorrect = countCorrectLetters();
         boolean improved = afterCorrect > beforeCorrect;
         if (improved) {
-            // افزایش امتیاز فقط روی مرحله فعال بازیکن (جایی که مرحله بعد آزاد نشده) انجام می‌شود.
-            int nextLevel = activeLevelId + 1;
-            repository.isLevelCompletedAsync(nextLevel, isNextCompleted -> {
-                if (!isNextCompleted) {
-                    updateScoreByDeltaOnMainThread(1);
+            // افزایش امتیاز فقط روی مرحله فعال بازیکن مجاز است:
+            // 1) خود مرحله هنوز کامل نشده باشد
+            // 2) مرحله بعدی هنوز آزاد/کامل نشده باشد
+            repository.isLevelCompletedAsync(activeLevelId, isCurrentCompleted -> {
+                if (isCurrentCompleted) {
+                    return;
                 }
+                int nextLevel = activeLevelId + 1;
+                repository.isLevelCompletedAsync(nextLevel, isNextCompleted -> {
+                    if (!isNextCompleted) {
+                        updateScoreByDeltaOnMainThread(1);
+                    }
+                });
             });
         } else {
             // کلیک اشتباه همیشه ۵ امتیاز کم می‌کند

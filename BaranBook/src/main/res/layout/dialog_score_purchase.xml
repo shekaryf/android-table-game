@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layoutDirection="rtl"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/tvScorePurchaseTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/score_purchase_title"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="@color/game_text_primary" />
+
+    <TextView
+        android:id="@+id/tvScorePurchaseDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/score_purchase_desc"
+        android:textSize="14sp"
+        android:textColor="@color/game_text_secondary" />
+
+    <LinearLayout
+        android:id="@+id/plansContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="12dp" />
+
+    <LinearLayout
+        android:id="@+id/loadingContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ProgressBar
+            android:id="@+id/progressPlans"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:indeterminate="true" />
+
+        <TextView
+            android:id="@+id/tvLoadingPlans"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/score_purchase_loading"
+            android:textColor="@color/game_text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancelPurchase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/score_purchase_cancel" />
+
+</LinearLayout>

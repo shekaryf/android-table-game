@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "ir.baran.Sticher"
+    namespace = "ir.baran.table"
     compileSdk = 34
 
     androidResources {
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ir.baran.Sticher"
+        applicationId = "ir.baran.table"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

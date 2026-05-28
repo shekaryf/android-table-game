@@ -21,8 +21,8 @@
     <string name="DefaultTypeface">font/irn.ttf</string>
     <string name="NextTypeface">font/irn.ttf</string>
     <string name="NextMenuType"></string>
-    <string name="base64Encode">MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwD2Z7mODy6GMLdA9iyzazt9hioxi2OvX3vqzoL6Sj2mjSs9N3iCYi34JgGJ6Z3RkFgbccLRgV3IuQ0w92l2TfIhnb8Za+XZcLJzuXNp+jUPtC3qlpwD2JxDG43SY6A1lxHMWfiOWMWlI/koavXuFozuOtMRzgMhOxT7vnuDh7QAyLr9B9phVnLs5RtHBHMf2rJElmTokytKQp0UfIraApO7pC+VRMSuDoUodRjQp/kCAwEAAQ==</string>
-    <string name="SKU_PREMIUM">ali.bb</string>
+    <string name="base64Encode">MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwDKXMo5g6dBs0M1PuQ8bmok4Q4oIox4jPKBbsq5RIGJ76c9RQ/sNg7pabjFDD5GV8ORmilozRd+QaGS3Hu/tPtEDrlqLq9EVeeIZbf1MqKEc/uvOSwO8UfhNifNnk9GUARVhsGx7req+URnUuL1ikWH3ddXTfwR4x8BinuvU2YVkwT+LdOtbYGx57j1Fl/GpYRr/R5jdACQwb4S1xlOqGStDUihRnwyhEOvTYX96I8CAwEAAQ==</string>
+    <string name="SKU_PREMIUM">score_1</string>
     <string name="purchase_sheet_title">نسخه کامل را فعال کن</string>
     <string name="purchase_sheet_subtitle">با خريد درون برنامه اي، همه بخش هاي کتاب بدون محدوديت در دسترس شما قرار مي گيرد.</string>
     <string name="purchase_sheet_description">اگر از نسخه آزمايشي استفاده مي کنيد، با يک پرداخت سريع مي توانيد تجربه کامل و بدون وقفه را فعال کنيد.</string>
@@ -39,6 +39,25 @@
     <string name="game_help_button">راهنما</string>
     <string name="game_help_dialog_title">راهنمای بازی</string>
     <string name="game_help_dialog_close">بستن</string>
+    <string name="score_purchase_title">خرید امتیاز</string>
+    <string name="score_purchase_desc">برای ادامه بازی یکی از بسته‌های امتیاز را خریداری کنید.\n\nطرح بازیابی: اگر امتیاز شما ۰ باشد و بعد از ۶۰ دقیقه بازی را باز کنید، ۵ امتیاز رایگان دریافت می‌کنید.</string>
+    <string name="score_purchase_cancel">انصراف</string>
+    <string name="score_purchase_buy">خرید</string>
+    <string name="score_purchase_price_format">%1$d تومان</string>
+    <string name="score_purchase_score_format">%1$d امتیاز</string>
+    <string name="score_purchase_loading">در حال دریافت بسته‌های امتیاز...</string>
+    <string name="score_purchase_load_failed">خطا در دریافت بسته‌ها. از بسته‌های پیش‌فرض استفاده شد.</string>
+    <string name="leaderboard_title">صدر امتیازات</string>
+    <string name="leaderboard_loading">در حال دریافت لیست بهترین‌ها...</string>
+    <string name="leaderboard_col_name">نام</string>
+    <string name="leaderboard_col_level">مرحله</string>
+    <string name="leaderboard_col_score">امتیاز</string>
+    <string name="leaderboard_my_rank">رتبه شما (ردیف 11)</string>
+    <string name="leaderboard_profile_title">برای نمایش رتبه‌بندی، نام و شماره موبایل را وارد کنید</string>
+    <string name="leaderboard_name_hint">نام</string>
+    <string name="leaderboard_mobile_hint">شماره موبایل</string>
+    <string name="leaderboard_save">ذخیره و نمایش</string>
+    <string name="leaderboard_error">خطا در دریافت رتبه‌بندی</string>
 
     <!-- Search Page Strings -->
     <string name="search_page_title">جستجو</string>

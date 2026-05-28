@@ -26,16 +26,16 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.textfield.TextInputEditText;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +43,10 @@ import java.util.Locale;
 import java.util.Map;
 
 import ir.baran.baranBook.R;
+import ir.baran.bookPack.api.LeaderboardApi;
+import ir.baran.bookPack.api.ScorePlansApi;
+import ir.baran.bookPack.api.model.LeaderboardEntry;
+import ir.baran.bookPack.api.model.LeaderboardResult;
 import ir.baran.bookPack.game.data.repository.GameRepository;
 import ir.baran.bookPack.game.domain.model.CellState;
 import ir.baran.bookPack.game.domain.model.GameBoard;
@@ -59,10 +63,14 @@ import ir.baran.framework.utilities.MyConfig;
 public class GamePage extends Form {
 
     public static final String EXTRA_LEVEL_ID = "level_id";
+    private static final String TAG_CLUE_CELL = "tag_clue_cell";
     private static final String SCORE_PREFS_NAME = "game_prefs";
     private static final String KEY_SCORE_ZERO_AT = "score_zero_at_ms";
     private static final long FREE_SCORE_INTERVAL_MS = 60L * 60L * 1000L;
     private static final int FREE_SCORE_AMOUNT = 5;
+    private static final String LEADERBOARD_PREFS = "leaderboard_prefs";
+    private static final String KEY_PLAYER_NAME = "player_name";
+    private static final String KEY_PLAYER_MOBILE = "player_mobile";
 
     private int colorBgPage;
     private int colorCellMovable;
@@ -94,6 +102,7 @@ public class GamePage extends Form {
     private MaterialButton btnPrev;
     private MaterialButton btnNext;
     private MaterialButton btnHelp;
+    private MaterialButton btnLeaderboard;
 
     private float zoomFactor = 1f;
     private ScaleGestureDetector scaleDetector;
@@ -113,6 +122,8 @@ public class GamePage extends Form {
     private int lastTappedCol = -1;
 
     private BazaarPay bazaarPay;
+    private ScorePlansApi scorePlansApi;
+    private LeaderboardApi leaderboardApi;
     private final List<BazaarPay.ScorePackPlan> scorePackPlans = new ArrayList<>();
 
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
@@ -124,6 +135,8 @@ public class GamePage extends Form {
         viewModel = new ViewModelProvider(this).get(GameViewModel.class);
         repository = new GameRepository(getApplicationContext());
         bazaarPay = BazaarPay.getInstance(this);
+        scorePlansApi = new ScorePlansApi();
+        leaderboardApi = new LeaderboardApi();
         bazaarPay.init();
         initScorePlans();
         subscribeToViewModel();
@@ -228,6 +241,7 @@ public class GamePage extends Form {
         ));
         tvStageInfo = headerView.findViewById(ir.baran.baranBook.R.id.tvStageInfo);
         tvScore = headerView.findViewById(ir.baran.baranBook.R.id.tvScore);
+        btnLeaderboard = headerView.findViewById(ir.baran.baranBook.R.id.btnLeaderboard);
         btnHelp = headerView.findViewById(ir.baran.baranBook.R.id.btnHelp);
         ImageView stageIcon = headerView.findViewById(ir.baran.baranBook.R.id.stageIcon);
         ivScoreIcon = headerView.findViewById(ir.baran.baranBook.R.id.scoreIcon);
@@ -239,6 +253,8 @@ public class GamePage extends Form {
         tvScore.setText("10");
         stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
         ivScoreIcon.setImageResource(R.drawable.ic_coin_gold);
+        ivScoreIcon.setOnClickListener(v -> showScorePurchaseDialog(true));
+        btnLeaderboard.setOnClickListener(v -> onLeaderboardClick());
 
         btnHelp.setCornerRadius(dp(10));
         btnHelp.setIconPadding(dp(4));
@@ -437,6 +453,7 @@ public class GamePage extends Form {
                 gridLayout.addView(cellView);
             }
         }
+
     }
 
     private View buildCellView(GameCell cell, int cellSize, List<ClueItem> cluesAtCell) {
@@ -481,6 +498,11 @@ public class GamePage extends Form {
         FrameLayout root = new FrameLayout(this);
         root.setClipChildren(false);
         root.setClipToPadding(false);
+        root.setTag(TAG_CLUE_CELL);
+        root.setClickable(true);
+        // Higher Z prevents right/down arrows from being covered by neighbor cells.
+        root.setElevation(dp(10));
+        root.setTranslationZ(dp(10));
 
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = cellSize;
@@ -550,10 +572,12 @@ public class GamePage extends Form {
                     1f
             );
             rowsContainer.addView(clueBox, rowLp);
+            clueBox.bringToFront();
         }
 
         return root;
     }
+
 
     private FrameLayout.LayoutParams clueArrowParams(String dir, int iconSize) {
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(iconSize, iconSize);
@@ -768,44 +792,50 @@ public class GamePage extends Form {
         }
 
         String normalized = direction.trim().toLowerCase(Locale.US).replace('-', '_');
-        String fileName;
+        String keyName;
+        int drawableRes;
         switch (normalized) {
             case "left":
-                fileName = "left.png";
+                keyName = "arrow_left";
+                drawableRes = R.drawable.arrow_left;
                 break;
             case "down":
-                fileName = "down.png";
+                keyName = "arrow_down";
+                drawableRes = R.drawable.arrow_down;
                 break;
             case "up":
             case "up_left":
             case "left_up":
-                fileName = "up_left.png";
+                keyName = "arrow_up_left";
+                drawableRes = R.drawable.arrow_up_left;
                 break;
             case "up_right":
             case "right_up":
-                fileName = "up_right.png";
+                keyName = "arrow_up_right";
+                drawableRes = R.drawable.arrow_up_right;
                 break;
             case "down_left":
             case "left_down":
-                fileName = "down_left.png";
+                keyName = "arrow_down_left";
+                drawableRes = R.drawable.arrow_down_left;
                 break;
             case "right":
             case "down_right":
             case "right_down":
-                fileName = "right_down.png";
+                keyName = "arrow_right_down";
+                drawableRes = R.drawable.arrow_right_down;
                 break;
             default:
                 return null;
         }
 
-        if (arrowCache.containsKey(fileName)) {
-            return arrowCache.get(fileName);
+        if (arrowCache.containsKey(keyName)) {
+            return arrowCache.get(keyName);
         }
 
         try {
-            InputStream is = getAssets().open("dirs/" + fileName);
-            Drawable drawable = Drawable.createFromStream(is, fileName);
-            arrowCache.put(fileName, drawable);
+            Drawable drawable = getResources().getDrawable(drawableRes);
+            arrowCache.put(keyName, drawable);
             return drawable;
         } catch (Exception e) {
             return null;
@@ -971,9 +1001,9 @@ public class GamePage extends Form {
 
     private void initScorePlans() {
         scorePackPlans.clear();
-        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_100", 100, 1000));
-        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_150", 150, 1200));
-        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_350", 350, 2000));
+        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_1", 100, 3000));
+        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_2", 150, 4000));
+        scorePackPlans.add(new BazaarPay.ScorePackPlan("score_3", 300, 7000));
     }
 
     private void handleScoreLock(int score) {
@@ -989,7 +1019,12 @@ public class GamePage extends Form {
     }
 
     private void showScorePurchaseDialogIfNeeded() {
-        if (!isScoreLocked || isFinishing() || isScorePurchaseDialogShowing) {
+        showScorePurchaseDialog(false);
+    }
+
+    private void showScorePurchaseDialog(boolean forcedByUser) {
+        boolean locked = viewModel.getCurrentScore() <= 0;
+        if ((!forcedByUser && !locked) || isFinishing() || isScorePurchaseDialogShowing) {
             return;
         }
         if (scorePackPlans.isEmpty()) {
@@ -999,36 +1034,260 @@ public class GamePage extends Form {
             return;
         }
         isScorePurchaseDialogShowing = true;
-        LinearLayout plansContainer = new LinearLayout(this);
-        plansContainer.setOrientation(LinearLayout.VERTICAL);
-        plansContainer.setPadding(dp(8), dp(8), dp(8), dp(8));
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_score_purchase, null, false);
+        TextView tvTitle = dialogView.findViewById(R.id.tvScorePurchaseTitle);
+        TextView tvDesc = dialogView.findViewById(R.id.tvScorePurchaseDesc);
+        TextView tvLoadingPlans = dialogView.findViewById(R.id.tvLoadingPlans);
+        LinearLayout plansContainer = dialogView.findViewById(R.id.plansContainer);
+        LinearLayout loadingContainer = dialogView.findViewById(R.id.loadingContainer);
+        MaterialButton btnCancelPurchase = dialogView.findViewById(R.id.btnCancelPurchase);
 
-        for (BazaarPay.ScorePackPlan plan : scorePackPlans) {
-            TextView planView = new TextView(this);
-            planView.setText(plan.title);
-            planView.setTextSize(16f);
-            planView.setTextColor(colorText);
-            planView.setPadding(dp(14), dp(12), dp(14), dp(12));
-            planView.setBackground(createMiniClueBoxBackground(true, 1));
-            LinearLayout.LayoutParams planLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            planLp.bottomMargin = dp(8);
-            planView.setLayoutParams(planLp);
-            planView.setOnClickListener(v -> startScorePurchase(plan));
-            plansContainer.addView(planView);
-        }
+        tvTitle.setTypeface(MyConfig.getDefaultTypeface());
+        tvDesc.setTypeface(MyConfig.getDefaultTypeface());
+        tvLoadingPlans.setTypeface(MyConfig.getDefaultTypeface());
+        loadingContainer.setVisibility(View.VISIBLE);
+        plansContainer.setVisibility(View.GONE);
+        plansContainer.removeAllViews();
+
+        boolean canCancel = viewModel.getCurrentScore() > 0;
+        btnCancelPurchase.setTypeface(MyConfig.getDefaultTypeface());
+        btnCancelPurchase.setVisibility(canCancel ? View.VISIBLE : View.GONE);
+        btnCancelPurchase.setOnClickListener(v -> {
+            if (scorePurchaseDialog != null) {
+                scorePurchaseDialog.dismiss();
+            }
+        });
 
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
-                .setTitle("امتیاز شما تمام شد")
-                .setMessage("برای ادامه بازی یکی از بسته‌های امتیاز را خریداری کنید.\n\nطرح بازیابی امتیاز: اگر امتیاز شما ۰ باشد و بعد از ۶۰ دقیقه بازی را باز کنید، ۵ امتیاز رایگان دریافت می‌کنید.")
-                .setCancelable(false)
-                .setView(plansContainer);
+                .setCancelable(canCancel)
+                .setView(dialogView);
 
         scorePurchaseDialog = builder.create();
-        scorePurchaseDialog.setCanceledOnTouchOutside(false);
+        scorePurchaseDialog.setCanceledOnTouchOutside(canCancel);
+        scorePurchaseDialog.setOnDismissListener(dialog -> isScorePurchaseDialogShowing = false);
         scorePurchaseDialog.show();
+
+        fetchScorePlansFromApi(new PlansLoadCallback() {
+            @Override
+            public void onLoaded(List<BazaarPay.ScorePackPlan> plans) {
+                if (isFinishing() || scorePurchaseDialog == null || !scorePurchaseDialog.isShowing()) {
+                    return;
+                }
+                loadingContainer.setVisibility(View.GONE);
+                plansContainer.setVisibility(View.VISIBLE);
+                scorePackPlans.clear();
+                if (plans != null && !plans.isEmpty()) {
+                    scorePackPlans.addAll(plans);
+                } else {
+                    initScorePlans();
+                }
+                bindPlansToContainer(plansContainer, scorePackPlans);
+            }
+
+            @Override
+            public void onFailed() {
+                if (isFinishing() || scorePurchaseDialog == null || !scorePurchaseDialog.isShowing()) {
+                    return;
+                }
+                loadingContainer.setVisibility(View.GONE);
+                plansContainer.setVisibility(View.VISIBLE);
+                initScorePlans();
+                bindPlansToContainer(plansContainer, scorePackPlans);
+                showMessage(getString(R.string.score_purchase_load_failed));
+            }
+        });
+    }
+
+    private void bindPlansToContainer(LinearLayout plansContainer, List<BazaarPay.ScorePackPlan> plans) {
+        plansContainer.removeAllViews();
+        if (plans == null) {
+            return;
+        }
+        for (BazaarPay.ScorePackPlan plan : plans) {
+            View planRow = LayoutInflater.from(this).inflate(R.layout.item_score_plan, plansContainer, false);
+            TextView tvPlanScore = planRow.findViewById(R.id.tvPlanScore);
+            TextView tvPlanPrice = planRow.findViewById(R.id.tvPlanPrice);
+            MaterialButton btnBuyPlan = planRow.findViewById(R.id.btnBuyPlan);
+
+            tvPlanScore.setTypeface(MyConfig.getDefaultTypeface());
+            tvPlanPrice.setTypeface(MyConfig.getDefaultTypeface());
+            btnBuyPlan.setTypeface(MyConfig.getDefaultTypeface());
+            tvPlanScore.setText(getString(R.string.score_purchase_score_format, plan.scoreAmount));
+            tvPlanPrice.setText(getString(R.string.score_purchase_price_format, plan.priceToman));
+            btnBuyPlan.setOnClickListener(v -> startScorePurchase(plan));
+            plansContainer.addView(planRow);
+        }
+    }
+
+    private interface PlansLoadCallback {
+        void onLoaded(List<BazaarPay.ScorePackPlan> plans);
+        void onFailed();
+    }
+
+    private void fetchScorePlansFromApi(PlansLoadCallback callback) {
+        new Thread(() -> {
+            try {
+                List<BazaarPay.ScorePackPlan> apiPlans = scorePlansApi.fetchPlans();
+                if (apiPlans == null || apiPlans.isEmpty()) {
+                    uiHandler.post(callback::onFailed);
+                    return;
+                }
+                uiHandler.post(() -> callback.onLoaded(apiPlans));
+            } catch (Exception e) {
+                uiHandler.post(callback::onFailed);
+            }
+        }).start();
+    }
+
+    private void onLeaderboardClick() {
+        String name = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_NAME, "");
+        String mobile = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_MOBILE, "");
+        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(mobile)) {
+            showProfileDialogForLeaderboard();
+            return;
+        }
+        showLeaderboardDialog(name, mobile);
+    }
+
+    private void showProfileDialogForLeaderboard() {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_user_profile, null, false);
+        TextView tvTitle = view.findViewById(R.id.tvProfileTitle);
+        TextInputEditText etName = view.findViewById(R.id.etPlayerName);
+        TextInputEditText etMobile = view.findViewById(R.id.etPlayerMobile);
+        tvTitle.setTypeface(MyConfig.getDefaultTypeface());
+        etName.setTypeface(MyConfig.getDefaultTypeface());
+        etMobile.setTypeface(MyConfig.getDefaultTypeface());
+
+        new MaterialAlertDialogBuilder(this)
+                .setView(view)
+                .setCancelable(true)
+                .setPositiveButton(R.string.leaderboard_save, (dialog, which) -> {
+                    String name = etName.getText() == null ? "" : etName.getText().toString().trim();
+                    String mobile = etMobile.getText() == null ? "" : etMobile.getText().toString().trim();
+                    if (TextUtils.isEmpty(name) || TextUtils.isEmpty(mobile)) {
+                        showMessage(getString(R.string.leaderboard_profile_title));
+                        return;
+                    }
+                    getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE)
+                            .edit()
+                            .putString(KEY_PLAYER_NAME, name)
+                            .putString(KEY_PLAYER_MOBILE, mobile)
+                            .apply();
+                    showLeaderboardDialog(name, mobile);
+                })
+                .setNegativeButton(R.string.game_help_dialog_close, null)
+                .show();
+    }
+
+    private void showLeaderboardDialog(String name, String mobile) {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_leaderboard, null, false);
+        TextView tvTitle = view.findViewById(R.id.tvLeaderboardTitle);
+        TextView tvLoading = view.findViewById(R.id.tvLeaderboardLoading);
+        LinearLayout loadingContainer = view.findViewById(R.id.loadingLeaderboardContainer);
+        ScrollView scroll = view.findViewById(R.id.leaderboardScroll);
+        LinearLayout rows = view.findViewById(R.id.leaderboardRows);
+        TextView tvMyRankTitle = view.findViewById(R.id.tvMyRankTitle);
+        LinearLayout myRankRow = view.findViewById(R.id.myRankRow);
+        TextView tvMyRankName = view.findViewById(R.id.tvMyRankName);
+        TextView tvMyRankLevel = view.findViewById(R.id.tvMyRankLevel);
+        TextView tvMyRankScore = view.findViewById(R.id.tvMyRankScore);
+
+        tvTitle.setTypeface(MyConfig.getDefaultTypeface());
+        tvLoading.setTypeface(MyConfig.getDefaultTypeface());
+        tvMyRankTitle.setTypeface(MyConfig.getDefaultTypeface());
+        tvMyRankName.setTypeface(MyConfig.getDefaultTypeface());
+        tvMyRankLevel.setTypeface(MyConfig.getDefaultTypeface());
+        tvMyRankScore.setTypeface(MyConfig.getDefaultTypeface());
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setView(view)
+                .setCancelable(true)
+                .setNegativeButton(R.string.game_help_dialog_close, null)
+                .create();
+        dialog.show();
+
+        loadingContainer.setVisibility(View.VISIBLE);
+        scroll.setVisibility(View.GONE);
+        tvMyRankTitle.setVisibility(View.GONE);
+        myRankRow.setVisibility(View.GONE);
+        rows.removeAllViews();
+
+        int level = currentLevelId > 0 ? currentLevelId : 1;
+        int score = viewModel.getCurrentScore();
+
+        new Thread(() -> {
+            try {
+                LeaderboardResult result = leaderboardApi.submitAndFetch(name, mobile, level, score);
+                uiHandler.post(() -> {
+                    if (isFinishing() || !dialog.isShowing()) {
+                        return;
+                    }
+                    loadingContainer.setVisibility(View.GONE);
+                    scroll.setVisibility(View.VISIBLE);
+
+                    int rankCounter = 1;
+                    for (LeaderboardEntry entry : result.topEntries) {
+                        rows.addView(buildLeaderboardRow(entry.name, entry.level, entry.score, rankCounter));
+                        rankCounter++;
+                    }
+
+                    if (result.selfEntry != null) {
+                        tvMyRankTitle.setVisibility(View.VISIBLE);
+                        myRankRow.setVisibility(View.VISIBLE);
+                        tvMyRankName.setText(result.selfEntry.rank + ". " + result.selfEntry.name);
+                        tvMyRankLevel.setText(String.valueOf(result.selfEntry.level));
+                        tvMyRankScore.setText(String.valueOf(result.selfEntry.score));
+                    }
+                });
+            } catch (Exception e) {
+                uiHandler.post(() -> {
+                    if (isFinishing() || !dialog.isShowing()) {
+                        return;
+                    }
+                    loadingContainer.setVisibility(View.GONE);
+                    showMessage(getString(R.string.leaderboard_error));
+                });
+            }
+        }).start();
+    }
+
+    private View buildLeaderboardRow(String name, int level, int score, int rank) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row.setPadding(dp(8), dp(8), dp(8), dp(8));
+        row.setBackgroundResource(R.drawable.purchase_benefits_bg);
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        rowLp.bottomMargin = dp(6);
+        row.setLayoutParams(rowLp);
+
+        TextView tvName = new TextView(this);
+        tvName.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.4f));
+        tvName.setTypeface(MyConfig.getDefaultTypeface());
+        tvName.setTextColor(colorText);
+        tvName.setText(rank + ". " + name);
+
+        TextView tvLevel = new TextView(this);
+        tvLevel.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.8f));
+        tvLevel.setTypeface(MyConfig.getDefaultTypeface());
+        tvLevel.setTextColor(colorText);
+        tvLevel.setGravity(Gravity.CENTER);
+        tvLevel.setText(String.valueOf(level));
+
+        TextView tvScoreCell = new TextView(this);
+        tvScoreCell.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.8f));
+        tvScoreCell.setTypeface(MyConfig.getDefaultTypeface());
+        tvScoreCell.setTextColor(colorText);
+        tvScoreCell.setGravity(Gravity.CENTER);
+        tvScoreCell.setText(String.valueOf(score));
+
+        row.addView(tvName);
+        row.addView(tvLevel);
+        row.addView(tvScoreCell);
+        return row;
     }
 
     private void startScorePurchase(BazaarPay.ScorePackPlan selectedPlan) {

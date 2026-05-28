@@ -35,7 +35,7 @@ public class MyConfig {
 
 	//
 	// -------------------------------------------
-	private static String _NextTypeface = "STEHRAN.ttf";
+	private static String _NextTypeface = "font/irn.ttf";
 	private static Typeface _NTypeface = null;
 	private static int[] _NextGradiant = null;
 	private static int[] _NextPressGradiant = null;
@@ -106,7 +106,7 @@ public class MyConfig {
 				_DTypeface = Typeface.createFromAsset(_AssetManager,
 						_DefaultTypeface);
 			} catch (Exception e) {
-				_DefaultTypeface = "Vazir-Light.ttf";
+				_DefaultTypeface = "font/irn.ttf";
 				_DTypeface = Typeface.createFromAsset(_AssetManager,
 						_DefaultTypeface);
 			}
@@ -178,7 +178,7 @@ public class MyConfig {
 			try {
 				_NTypeface = Typeface.createFromAsset(_AssetManager, _NextTypeface);
 			} catch (Exception e) {
-				_NextTypeface = "Vazir-Light.ttf";
+				_NextTypeface = "font/irn.ttf";
 				_NTypeface = Typeface.createFromAsset(_AssetManager, _NextTypeface);
 			}
 

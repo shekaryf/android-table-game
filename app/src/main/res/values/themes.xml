@@ -12,17 +12,23 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor">@color/StatusBarColor</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:fontFamily">@font/irn</item>
+        <item name="fontFamily">@font/irn</item>
         <!-- Customize your theme here. -->
     </style>
 
     <style name="Theme.BaranPack.Fullscreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowBackground">@color/launch_screen_background</item>
+        <item name="android:fontFamily">@font/irn</item>
+        <item name="fontFamily">@font/irn</item>
     </style>
 
     <style name="Theme.BaranPack.NoTitleBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/launch_screen_background</item>
         <item name="android:statusBarColor">@color/StatusBarColor</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:fontFamily">@font/irn</item>
+        <item name="fontFamily">@font/irn</item>
     </style>
 </resources>
