@@ -25,7 +25,7 @@
             android:id="@+id/etPlayerName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/leaderboard_name_hint"
+            android:hint="@string/leaderboard_name_required_hint"
             android:inputType="textPersonName" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -38,9 +38,8 @@
             android:id="@+id/etPlayerMobile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/leaderboard_mobile_hint"
+            android:hint="@string/leaderboard_mobile_optional_hint"
             android:inputType="phone" />
     </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>
-

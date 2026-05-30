@@ -276,9 +276,8 @@ public class BazaarPay {
 				return Unit.INSTANCE;
 			});
 			purchaseCallback.purchaseSucceed(purchaseEntity -> {
-				if (scorePurchaseListener != null) {
-					scorePurchaseListener.onScorePurchaseSuccess(plan);
-				}
+				String purchaseToken = invokeStringMethod(purchaseEntity, "getPurchaseToken");
+				consumeScorePurchaseAndNotify(plan, purchaseToken);
 				return Unit.INSTANCE;
 			});
 			purchaseCallback.purchaseCanceled(() -> {
@@ -290,6 +289,34 @@ public class BazaarPay {
 			purchaseCallback.purchaseFailed(throwable -> {
 				if (scorePurchaseListener != null) {
 					scorePurchaseListener.onScorePurchaseFailed("پرداخت ناموفق");
+				}
+				return Unit.INSTANCE;
+			});
+			return Unit.INSTANCE;
+		});
+	}
+
+	private void consumeScorePurchaseAndNotify(@NonNull ScorePackPlan plan, String purchaseToken) {
+		if (payment == null || !isBillingReady || purchaseToken == null || purchaseToken.trim().isEmpty()) {
+			// اگر توکن نبود، حداقل امتیاز کاربر از بین نرود.
+			if (scorePurchaseListener != null) {
+				scorePurchaseListener.onScorePurchaseSuccess(plan);
+			}
+			return;
+		}
+
+		payment.consumeProduct(purchaseToken, consumeCallback -> {
+			consumeCallback.consumeSucceed(() -> {
+				if (scorePurchaseListener != null) {
+					scorePurchaseListener.onScorePurchaseSuccess(plan);
+				}
+				return Unit.INSTANCE;
+			});
+			consumeCallback.consumeFailed(throwable -> {
+				// خرید انجام شده است؛ امتیاز را می‌دهیم ولی پیام هشدار نمایش می‌دهیم.
+				if (scorePurchaseListener != null) {
+					scorePurchaseListener.onScorePurchaseSuccess(plan);
+					scorePurchaseListener.onScorePurchaseFailed("خرید انجام شد، اما مصرف خودکار با خطا روبرو شد. در خرید بعدی دوباره تلاش می‌شود.");
 				}
 				return Unit.INSTANCE;
 			});

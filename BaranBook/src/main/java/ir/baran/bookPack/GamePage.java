@@ -71,6 +71,7 @@ public class GamePage extends Form {
     private static final String LEADERBOARD_PREFS = "leaderboard_prefs";
     private static final String KEY_PLAYER_NAME = "player_name";
     private static final String KEY_PLAYER_MOBILE = "player_mobile";
+    private static final String KEY_PLAYER_SERVER_ID = "player_server_id";
 
     private int colorBgPage;
     private int colorCellMovable;
@@ -1142,7 +1143,8 @@ public class GamePage extends Form {
     private void onLeaderboardClick() {
         String name = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_NAME, "");
         String mobile = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_MOBILE, "");
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(mobile)) {
+        // موبایل اختیاری است؛ فقط اگر نام خالی باشد فرم ورودی نمایش داده شود.
+        if (TextUtils.isEmpty(name)) {
             showProfileDialogForLeaderboard();
             return;
         }
@@ -1164,8 +1166,9 @@ public class GamePage extends Form {
                 .setPositiveButton(R.string.leaderboard_save, (dialog, which) -> {
                     String name = etName.getText() == null ? "" : etName.getText().toString().trim();
                     String mobile = etMobile.getText() == null ? "" : etMobile.getText().toString().trim();
-                    if (TextUtils.isEmpty(name) || TextUtils.isEmpty(mobile)) {
-                        showMessage(getString(R.string.leaderboard_profile_title));
+                    // موبایل اختیاری است؛ فقط نام اجباری می‌ماند.
+                    if (TextUtils.isEmpty(name)) {
+                        showMessage(getString(R.string.leaderboard_name_hint));
                         return;
                     }
                     getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE)
@@ -1214,10 +1217,11 @@ public class GamePage extends Form {
 
         int level = currentLevelId > 0 ? currentLevelId : 1;
         int score = viewModel.getCurrentScore();
+        String serverId = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_SERVER_ID, "");
 
         new Thread(() -> {
             try {
-                LeaderboardResult result = leaderboardApi.submitAndFetch(name, mobile, level, score);
+                LeaderboardResult result = leaderboardApi.submitAndFetch(name, mobile, level, score, serverId);
                 uiHandler.post(() -> {
                     if (isFinishing() || !dialog.isShowing()) {
                         return;
@@ -1232,6 +1236,18 @@ public class GamePage extends Form {
                     }
 
                     if (result.selfEntry != null) {
+                        if (!TextUtils.isEmpty(result.selfEntry.id)) {
+                            getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE)
+                                    .edit()
+                                    .putString(KEY_PLAYER_SERVER_ID, result.selfEntry.id)
+                                    .apply();
+                        } else if (!TextUtils.isEmpty(serverId)) {
+                            // اگر پاسخ id نداد، id قبلی حذف نشود.
+                            getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE)
+                                    .edit()
+                                    .putString(KEY_PLAYER_SERVER_ID, serverId)
+                                    .apply();
+                        }
                         tvMyRankTitle.setVisibility(View.VISIBLE);
                         myRankRow.setVisibility(View.VISIBLE);
                         tvMyRankName.setText(result.selfEntry.rank + ". " + result.selfEntry.name);
@@ -1264,11 +1280,20 @@ public class GamePage extends Form {
         rowLp.bottomMargin = dp(6);
         row.setLayoutParams(rowLp);
 
+        TextView tvRank = new TextView(this);
+        tvRank.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.55f));
+        tvRank.setTypeface(MyConfig.getDefaultTypeface());
+        int goldRankColor = 0xFFB8860B;
+        tvRank.setTextColor(rank == 1 ? goldRankColor : colorText);
+        tvRank.setGravity(Gravity.CENTER);
+        tvRank.setText(rank == 1 ? "★ " + rank : String.valueOf(rank));
+        tvRank.setTextSize(rank == 1 ? 18f : 15f);
+
         TextView tvName = new TextView(this);
-        tvName.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.4f));
+        tvName.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.15f));
         tvName.setTypeface(MyConfig.getDefaultTypeface());
-        tvName.setTextColor(colorText);
-        tvName.setText(rank + ". " + name);
+        tvName.setTextColor(rank == 1 ? goldRankColor : colorText);
+        tvName.setText(name);
 
         TextView tvLevel = new TextView(this);
         tvLevel.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.8f));
@@ -1284,6 +1309,7 @@ public class GamePage extends Form {
         tvScoreCell.setGravity(Gravity.CENTER);
         tvScoreCell.setText(String.valueOf(score));
 
+        row.addView(tvRank);
         row.addView(tvName);
         row.addView(tvLevel);
         row.addView(tvScoreCell);
