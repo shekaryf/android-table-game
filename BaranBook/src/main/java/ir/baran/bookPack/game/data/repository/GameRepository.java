@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import ir.baran.bookPack.GamePage;
 import ir.baran.bookPack.game.data.dao.LevelDao;
 import ir.baran.bookPack.game.data.dao.UserDao;
 import ir.baran.bookPack.game.data.local.GameDatabase;
@@ -124,7 +125,7 @@ public class GameRepository {
     public void getScoreAsync(final android.content.Context context, final ScoreCallback callback) {
         ioExecutor.execute(() -> {
             android.content.SharedPreferences sp = context.getSharedPreferences("game_prefs", android.content.Context.MODE_PRIVATE);
-            int score = sp.getInt("score", 10);
+            int score = sp.getInt("score", GamePage.INIT_DEFAULT_SCORE);
             if (callback != null) {
                 callback.onResult(score);
             }

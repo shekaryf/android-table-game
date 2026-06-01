@@ -102,37 +102,8 @@ public abstract class Form extends AppCompatActivity {
 	}
 
 	public void showMessage(final String message, final int time) {
-		runOnUiThread(new Runnable() {
-
-			@Override
-			public void run() {
-				Toast toast = new Toast(Form.this);
-				toast.setDuration(time);
-				LinearLayout ll = new LinearLayout(Form.this);
-				toast.setView(ll);
-				ll.setBackgroundColor(0x00000000);
-				TextView view = new TextView(Form.this);
-
-				LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-						LinearLayout.LayoutParams.WRAP_CONTENT);
-				int margin = Functions.dp2px(15);
-				view.setPadding(margin, margin, margin, margin);
-
-				lp.setMargins(margin, margin, margin, margin);
-				lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
-				view.setGravity(lp.gravity);
-				view.setLayoutParams(lp);
-				ll.addView(view);
-				GradientDrawable gradiant = MyConfig.getDefaultPressGradiant();
-				gradiant.setCornerRadius(MyConfig.getDefaultCornerRadios());
-				gradiant.setStroke(MyConfig.getDefaultStrokeWidth(), MyConfig.getDefaultStrokeColor());
-
-				view.setBackgroundDrawable(gradiant);
-				view.setText(message);
-				view.setTextColor(MyConfig.getDefaultTextColor());
-				toast.show();
-			}
-		});
+		Toast toast = Toast.makeText(this, message, time);
+		toast.show();
 	}
 
 	public void superStartActivity(Intent intent) {

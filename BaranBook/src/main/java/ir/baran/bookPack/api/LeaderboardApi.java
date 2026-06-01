@@ -42,6 +42,16 @@ public class LeaderboardApi extends BaseApiClient {
         return result;
     }
 
+    public void submitOnly(String name, String mobile, int level, int score, String userId) throws Exception {
+        JSONObject body = new JSONObject();
+        body.put("name", name);
+        body.put("mobile", mobile);
+        body.put("level", level);
+        body.put("score", score);
+        body.put("id", userId == null ? "" : userId);
+        executePostJson(URL_SUBMIT_AND_RANK, body);
+    }
+
     private LeaderboardResult parseResult(String raw) throws Exception {
         LeaderboardResult result = new LeaderboardResult();
         if (raw == null || raw.trim().isEmpty()) {

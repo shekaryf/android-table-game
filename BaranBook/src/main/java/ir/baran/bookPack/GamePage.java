@@ -43,6 +43,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import ir.baran.baranBook.R;
+import ir.baran.bookPack.api.GiftCodeApi;
 import ir.baran.bookPack.api.LeaderboardApi;
 import ir.baran.bookPack.api.ScorePlansApi;
 import ir.baran.bookPack.api.model.LeaderboardEntry;
@@ -65,9 +66,7 @@ public class GamePage extends Form {
     public static final String EXTRA_LEVEL_ID = "level_id";
     private static final String TAG_CLUE_CELL = "tag_clue_cell";
     private static final String SCORE_PREFS_NAME = "game_prefs";
-    private static final String KEY_SCORE_ZERO_AT = "score_zero_at_ms";
-    private static final long FREE_SCORE_INTERVAL_MS = 60L * 60L * 1000L;
-    private static final int FREE_SCORE_AMOUNT = 5;
+    public static final int INIT_DEFAULT_SCORE = 10;
     private static final String LEADERBOARD_PREFS = "leaderboard_prefs";
     private static final String KEY_PLAYER_NAME = "player_name";
     private static final String KEY_PLAYER_MOBILE = "player_mobile";
@@ -125,6 +124,7 @@ public class GamePage extends Form {
     private BazaarPay bazaarPay;
     private ScorePlansApi scorePlansApi;
     private LeaderboardApi leaderboardApi;
+    private GiftCodeApi giftCodeApi;
     private final List<BazaarPay.ScorePackPlan> scorePackPlans = new ArrayList<>();
 
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
@@ -138,13 +138,14 @@ public class GamePage extends Form {
         bazaarPay = BazaarPay.getInstance(this);
         scorePlansApi = new ScorePlansApi();
         leaderboardApi = new LeaderboardApi();
+        giftCodeApi = new GiftCodeApi();
         bazaarPay.init();
         initScorePlans();
         subscribeToViewModel();
         viewModel.validateAllLevels();
         viewModel.loadScore();
         if (tvScore != null) {
-            tvScore.setText("10");
+            tvScore.setText(String.valueOf(INIT_DEFAULT_SCORE));
         }
         repository.getLevelsCountAsync(count -> uiHandler.post(() -> {
             levelsCount = count;
@@ -194,6 +195,7 @@ public class GamePage extends Form {
             if (allowNextFromCurrentWin) {
                 repository.hasLevelAsync(next, exists -> uiHandler.post(() -> {
                     if (exists) {
+                        syncLeaderboardSilentlyIfRegistered(next);
                         allowNextFromCurrentWin = false;
                         viewModel.loadLevel(next);
                         repository.setCurrentLevelIdAsync(next);
@@ -206,6 +208,7 @@ public class GamePage extends Form {
 
             repository.isLevelCompletedAsync(next, completed -> uiHandler.post(() -> {
                 if (completed) {
+                    syncLeaderboardSilentlyIfRegistered(next);
                     viewModel.loadLevel(next);
                     repository.setCurrentLevelIdAsync(next);
                 } else {
@@ -251,10 +254,13 @@ public class GamePage extends Form {
         tvStageInfo.setTypeface(ConfigurationUtils.getLabelFont(this));
         tvScore.setTextColor(colorText);
         tvScore.setTypeface(ConfigurationUtils.getLabelFont(this));
-        tvScore.setText("10");
+        tvScore.setText(String.valueOf(INIT_DEFAULT_SCORE));
         stageIcon.setImageResource(ir.baran.baranBook.R.drawable.ic_star_gold);
         ivScoreIcon.setImageResource(R.drawable.ic_coin_gold);
-        ivScoreIcon.setOnClickListener(v -> showScorePurchaseDialog(true));
+        ivScoreIcon.setOnClickListener(v -> {
+            int scoreNow = getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getInt("score", INIT_DEFAULT_SCORE);
+            showScorePurchaseDialog(true, scoreNow);
+        });
         btnLeaderboard.setOnClickListener(v -> onLeaderboardClick());
 
         btnHelp.setCornerRadius(dp(10));
@@ -368,14 +374,13 @@ public class GamePage extends Form {
         });
 
         viewModel.getScoreLiveData().observe(this, score -> {
-            if (tvScore != null && score != null) {
-                tvScore.setText(String.valueOf(score));
+            if (tvScore==null)
+                tvScore = findViewById(ir.baran.baranBook.R.id.tvScore);
+            int currentScore = score == null ? INIT_DEFAULT_SCORE : score;
+            if (tvScore != null) {
+                tvScore.setText(String.valueOf(currentScore));
             }
-            int currentScore = score == null ? 10 : score;
-            boolean granted = handleFreeScoreRecoveryIfNeeded(currentScore);
-            if (!granted) {
-                handleScoreLock(currentScore);
-            }
+            handleScoreLock(currentScore);
         });
 
         viewModel.getMoveResultLiveData().observe(this, isOk -> {
@@ -481,7 +486,8 @@ public class GamePage extends Form {
         if (cell.getState() == CellState.MOVABLE || cell.getState() == CellState.SELECTED) {
             tv.setOnClickListener(v -> {
                 if (isScoreLocked) {
-                    showScorePurchaseDialogIfNeeded();
+                    int scoreNow = getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getInt("score", INIT_DEFAULT_SCORE);
+                    showScorePurchaseDialogIfNeeded(scoreNow);
                     return;
                 }
                 lastTappedCellView = v;
@@ -521,10 +527,11 @@ public class GamePage extends Form {
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        int count = Math.min(2, cluesAtCell.size());
+        List<ClueItem> orderedClues = orderCluesForTwoRows(cluesAtCell);
+        int count = Math.min(2, orderedClues.size());
         int iconSize = Math.max(dp(20), Math.min(dp(38), cellSize / 3));
         for (int i = 0; i < count; i++) {
-            ClueItem clue = cluesAtCell.get(i);
+            ClueItem clue = orderedClues.get(i);
             String normalizedDir = normalizeDirection(clue.direction);
 
             FrameLayout clueBox = new FrameLayout(this);
@@ -536,12 +543,15 @@ public class GamePage extends Form {
 
             TextView tv = new TextView(this);
             tv.setTextColor(colorSubtext);
-            tv.setTextSize(clueInlineFontSizeForCell(cellSize));
+            boolean isLongClue = clue.clue != null && clue.clue.trim().length() > 10;
+            float baseInlineSize = clueInlineFontSizeForCell(cellSize);
+            tv.setTextSize(isLongClue ? Math.max(8f, baseInlineSize - 4f) : baseInlineSize);
             tv.setTypeface(ConfigurationUtils.getLabelFont(GamePage.this));
-            tv.setSingleLine(true);
+            tv.setSingleLine(!isLongClue);
+            tv.setMaxLines(isLongClue ? 2 : 1);
             tv.setEllipsize(TextUtils.TruncateAt.END);
             tv.setText(clue.clue);
-            tv.setGravity(Gravity.CENTER_VERTICAL);
+            tv.setGravity(Gravity.CENTER);
 
             int basePadStart = dp(5);
             int basePadEnd = dp(5);
@@ -577,6 +587,44 @@ public class GamePage extends Form {
         }
 
         return root;
+    }
+
+    private List<ClueItem> orderCluesForTwoRows(List<ClueItem> source) {
+        List<ClueItem> ordered = new ArrayList<>();
+        if (source == null || source.isEmpty()) {
+            return ordered;
+        }
+        if (source.size() == 1) {
+            ordered.add(source.get(0));
+            return ordered;
+        }
+
+        // باکس دو ردیفی: UP باید بالا باشد و DOWN باید پایین باشد.
+        // این کار از افتادن فلش UP روی متن ردیف بالا جلوگیری می‌کند.
+        ClueItem first = source.get(0);
+        ClueItem second = source.get(1);
+        String dirFirst = normalizeDirection(first.direction);
+        String dirSecond = normalizeDirection(second.direction);
+
+        boolean firstUp = isUpFamily(dirFirst);
+        boolean secondUp = isUpFamily(dirSecond);
+        boolean firstDown = isDownFamily(dirFirst);
+        boolean secondDown = isDownFamily(dirSecond);
+
+        if (secondUp && !firstUp) {
+            ordered.add(second); // بالا
+            ordered.add(first);  // پایین
+            return ordered;
+        }
+        if (firstDown && !secondDown) {
+            ordered.add(second); // بالا
+            ordered.add(first);  // پایین (DOWN)
+            return ordered;
+        }
+
+        ordered.add(first);
+        ordered.add(second);
+        return ordered;
     }
 
 
@@ -641,6 +689,16 @@ public class GamePage extends Form {
     private boolean isRightFamily(String dir) {
         return "right".equals(dir) || "right_up".equals(dir) || "up_right".equals(dir)
                 || "right_down".equals(dir) || "down_right".equals(dir);
+    }
+
+    private boolean isUpFamily(String dir) {
+        return "up".equals(dir) || "up_left".equals(dir) || "left_up".equals(dir)
+                || "up_right".equals(dir) || "right_up".equals(dir);
+    }
+
+    private boolean isDownFamily(String dir) {
+        return "down".equals(dir) || "down_left".equals(dir) || "left_down".equals(dir)
+                || "down_right".equals(dir) || "right_down".equals(dir);
     }
 
     private GradientDrawable createMiniClueBoxBackground(boolean first, int count) {
@@ -1008,6 +1066,10 @@ public class GamePage extends Form {
     }
 
     private void handleScoreLock(int score) {
+        // Immediately reflect latest score in header to avoid stale visual state.
+        if (tvScore != null) {
+            tvScore.setText(String.valueOf(score));
+        }
         boolean shouldLock = score <= 0;
         if (isScoreLocked == shouldLock && !(shouldLock && !isScorePurchaseDialogShowing)) {
             return;
@@ -1015,16 +1077,16 @@ public class GamePage extends Form {
         isScoreLocked = shouldLock;
         refreshFooterButtons();
         if (isScoreLocked) {
-            showScorePurchaseDialogIfNeeded();
+            showScorePurchaseDialogIfNeeded(score);
         }
     }
 
-    private void showScorePurchaseDialogIfNeeded() {
-        showScorePurchaseDialog(false);
+    private void showScorePurchaseDialogIfNeeded(int scoreSnapshot) {
+        showScorePurchaseDialog(false, scoreSnapshot);
     }
 
-    private void showScorePurchaseDialog(boolean forcedByUser) {
-        boolean locked = viewModel.getCurrentScore() <= 0;
+    private void showScorePurchaseDialog(boolean forcedByUser, int scoreSnapshot) {
+        boolean locked = scoreSnapshot <= 0;
         if ((!forcedByUser && !locked) || isFinishing() || isScorePurchaseDialogShowing) {
             return;
         }
@@ -1039,6 +1101,9 @@ public class GamePage extends Form {
         TextView tvTitle = dialogView.findViewById(R.id.tvScorePurchaseTitle);
         TextView tvDesc = dialogView.findViewById(R.id.tvScorePurchaseDesc);
         TextView tvLoadingPlans = dialogView.findViewById(R.id.tvLoadingPlans);
+        TextView tvGiftTitle = dialogView.findViewById(R.id.tvGiftTitle);
+        TextInputEditText etGiftCode = dialogView.findViewById(R.id.etGiftCode);
+        MaterialButton btnApplyGift = dialogView.findViewById(R.id.btnApplyGift);
         LinearLayout plansContainer = dialogView.findViewById(R.id.plansContainer);
         LinearLayout loadingContainer = dialogView.findViewById(R.id.loadingContainer);
         MaterialButton btnCancelPurchase = dialogView.findViewById(R.id.btnCancelPurchase);
@@ -1046,17 +1111,52 @@ public class GamePage extends Form {
         tvTitle.setTypeface(MyConfig.getDefaultTypeface());
         tvDesc.setTypeface(MyConfig.getDefaultTypeface());
         tvLoadingPlans.setTypeface(MyConfig.getDefaultTypeface());
+        tvGiftTitle.setTypeface(MyConfig.getDefaultTypeface());
+        etGiftCode.setTypeface(MyConfig.getDefaultTypeface());
+        btnApplyGift.setTypeface(MyConfig.getDefaultTypeface());
         loadingContainer.setVisibility(View.VISIBLE);
         plansContainer.setVisibility(View.GONE);
         plansContainer.removeAllViews();
 
-        boolean canCancel = viewModel.getCurrentScore() > 0;
+        boolean canCancel = !locked;
         btnCancelPurchase.setTypeface(MyConfig.getDefaultTypeface());
         btnCancelPurchase.setVisibility(canCancel ? View.VISIBLE : View.GONE);
         btnCancelPurchase.setOnClickListener(v -> {
             if (scorePurchaseDialog != null) {
                 scorePurchaseDialog.dismiss();
             }
+        });
+
+        btnApplyGift.setOnClickListener(v -> {
+            String code = etGiftCode.getText() == null ? "" : etGiftCode.getText().toString().trim();
+            if (TextUtils.isEmpty(code)) {
+                showMessage(getString(R.string.gift_code_invalid));
+                return;
+            }
+            btnApplyGift.setEnabled(false);
+            new Thread(() -> {
+                try {
+                    GiftCodeApi.GiftResult result = giftCodeApi.applyGiftCode(code);
+                    uiHandler.post(() -> {
+                        btnApplyGift.setEnabled(true);
+                        if (result != null && result.success && result.score > 0) {
+                            viewModel.addScore(result.score);
+                            if (scorePurchaseDialog != null && scorePurchaseDialog.isShowing()) {
+                                scorePurchaseDialog.dismiss();
+                            }
+                            // پیام بعد از بستن دیالوگ نمایش داده شود تا دیده شود.
+                            uiHandler.post(() -> showMessage(getString(R.string.gift_code_success, result.score)));
+                        } else {
+                            showMessage(getString(R.string.gift_code_invalid));
+                        }
+                    });
+                } catch (Exception e) {
+                    uiHandler.post(() -> {
+                        btnApplyGift.setEnabled(true);
+                        showMessage(getString(R.string.gift_code_error));
+                    });
+                }
+            }).start();
         });
 
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
@@ -1316,6 +1416,25 @@ public class GamePage extends Form {
         return row;
     }
 
+    private void syncLeaderboardSilentlyIfRegistered(int nextLevel) {
+        String serverId = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_SERVER_ID, "");
+        if (TextUtils.isEmpty(serverId)) {
+            return;
+        }
+        String name = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_NAME, "");
+        String mobile = getSharedPreferences(LEADERBOARD_PREFS, MODE_PRIVATE).getString(KEY_PLAYER_MOBILE, "");
+        int score = getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getInt("score", INIT_DEFAULT_SCORE);
+        final int levelForSubmit = Math.max(1, nextLevel);
+
+        new Thread(() -> {
+            try {
+                leaderboardApi.submitOnly(name, mobile, levelForSubmit, score, serverId);
+            } catch (Exception ignored) {
+                // بی‌صدا: کاربر نباید loading/پیام ببیند.
+            }
+        }).start();
+    }
+
     private void startScorePurchase(BazaarPay.ScorePackPlan selectedPlan) {
         if (selectedPlan == null || bazaarPay == null) {
             return;
@@ -1326,7 +1445,6 @@ public class GamePage extends Form {
             public void onScorePurchaseSuccess(BazaarPay.ScorePackPlan plan) {
                 runOnUiThread(() -> {
                     isScorePurchaseInProgress = false;
-                    clearScoreZeroTimestamp();
                     viewModel.addScore(plan.scoreAmount);
                     showMessage(plan.scoreAmount + " امتیاز به حساب شما اضافه شد.");
                     isScorePurchaseDialogShowing = false;
@@ -1342,7 +1460,7 @@ public class GamePage extends Form {
                     isScorePurchaseInProgress = false;
                     showMessage("خرید لغو شد.");
                     isScorePurchaseDialogShowing = false;
-                    showScorePurchaseDialogIfNeeded();
+                    showScorePurchaseDialogIfNeeded(getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getInt("score", INIT_DEFAULT_SCORE));
                 });
             }
 
@@ -1352,43 +1470,10 @@ public class GamePage extends Form {
                     isScorePurchaseInProgress = false;
                     showMessage(message);
                     isScorePurchaseDialogShowing = false;
-                    showScorePurchaseDialogIfNeeded();
+                    showScorePurchaseDialogIfNeeded(getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getInt("score", INIT_DEFAULT_SCORE));
                 });
             }
         });
-    }
-
-    private boolean handleFreeScoreRecoveryIfNeeded(int score) {
-        if (score > 0) {
-            clearScoreZeroTimestamp();
-            return false;
-        }
-
-        long now = System.currentTimeMillis();
-        long zeroAt = getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getLong(KEY_SCORE_ZERO_AT, 0L);
-        if (zeroAt <= 0L) {
-            getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putLong(KEY_SCORE_ZERO_AT, now)
-                    .apply();
-            return false;
-        }
-
-        if ((now - zeroAt) >= FREE_SCORE_INTERVAL_MS) {
-            clearScoreZeroTimestamp();
-            viewModel.addScore(FREE_SCORE_AMOUNT);
-            showMessage(FREE_SCORE_AMOUNT + " امتیاز رایگان به شما اضافه شد.");
-            return true;
-        }
-
-        return false;
-    }
-
-    private void clearScoreZeroTimestamp() {
-        getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE)
-                .edit()
-                .remove(KEY_SCORE_ZERO_AT)
-                .apply();
     }
 
     private static class ClueItem {
@@ -1418,6 +1503,14 @@ public class GamePage extends Form {
     @Override
     protected void onResume() {
         super.onResume();
-        handleScoreLock(viewModel.getCurrentScore());
+        int current = getSharedPreferences(SCORE_PREFS_NAME, MODE_PRIVATE).getInt("score", INIT_DEFAULT_SCORE);
+        if (current <= 0) {
+            isScoreLocked = true;
+            handleScoreLock(current);
+            showScorePurchaseDialog(true, current);
+        } else {
+            handleScoreLock(current);
+        }
+        viewModel.loadScore();
     }
 }
